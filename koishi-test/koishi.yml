@@ -52,6 +52,14 @@ plugins:
     longMemoryExtractInterval: 3
     longMemoryQueryRewrite: false
     emgasExtractModel: deepseek/deepseek/deepseek-v4.1-flash-fast
+  chatluna-sticker:aa0014:
+    storageDir: data/sticker-library
+    judgeThreshold: 1
+    judgeModel: deepseek/deepseek/deepseek-v4-flash-vision-exp
+    phashThreshold: 5
+    maxSendableImages: 2000
+    occurrenceTtlDays: 10
+    judgeTimeoutMinutes: 10
   qqbot-auth:aa0012:
     ownerIds:
       - '2791932480'

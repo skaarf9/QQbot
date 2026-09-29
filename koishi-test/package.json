@@ -28,8 +28,10 @@
     "koishi-plugin-chatluna-emotion": "file:../koishi-app/external/koishi-plugin-chatluna-emotion",
     "koishi-plugin-chatluna-followup": "file:../koishi-app/external/koishi-plugin-chatluna-followup",
     "koishi-plugin-chatluna-long-memory": "^1.4.0",
+    "koishi-plugin-chatluna-sticker": "^1.1.13",
     "koishi-plugin-chatluna-storage-service": "^1.0.7",
     "koishi-plugin-chatluna-vision": "file:../koishi-app/external/koishi-plugin-chatluna-vision",
+    "koishi-plugin-emojiluna": "^1.3.3",
     "koishi-plugin-qqbot-auth": "file:../koishi-app/external/koishi-plugin-qqbot-auth",
     "sharp": "^0.35.5"
   }

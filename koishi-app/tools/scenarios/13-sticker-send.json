@@ -1,0 +1,13 @@
+{
+  "_说明": "R5/R7 表情包（续）：pHash 去重不重复建条目 + 模型自主调 sticker_send 发图",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/sticker.stat"]] },
+    { "wait": 4000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["text", "/sticker.stat"]] },
+    { "wait": 4000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["image", "http://127.0.0.1:3003/pig.jpg"]] },
+    { "wait": 8000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/sticker.stat"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["at", "2178517838"], ["text", " 发个表情包，要能表达无语的"]] },
+    { "wait": 45000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["at", "2178517838"], ["text", " 你也来一张"]] }
+  ]
+}

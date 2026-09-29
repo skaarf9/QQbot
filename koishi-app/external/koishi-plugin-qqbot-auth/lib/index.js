@@ -82,6 +82,14 @@ const OVERRIDES = [
   ['chatluna.memory.clear', 3, '清空长期记忆'],
   ['chatluna.memory.edit', 3, '编辑长期记忆'],
 
+  // ---- 表情包库（R5/R7 装上 chatluna-sticker 后才存在）----
+  // 注意这个包的 `module.exports.name` 是 `auto-sticker`、包名却是
+  // `koishi-plugin-chatluna-sticker`，指令前缀仍然是 `sticker`。
+  // `sticker.retry`(3) / `sticker.retry.all`(4) / `sticker.prune`(3) 是它自带的，
+  // 这里只把「看库内容」的两条从 1 提到 2（`sticker.send` 保持 1：发张表情包不是危险操作）。
+  ['sticker.list', 2, '看表情包库'],
+  ['sticker.stat', 2, '表情包库统计'],
+
   // ---- 自研插件里的管理向指令 ----
   ['followup', 3, '群聊跟进状态'],
   // ★ 这 4 条的「真名」不是 `emotion.set` —— `ctx.command('emotion/set')` 里的
