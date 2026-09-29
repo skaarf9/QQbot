@@ -329,6 +329,13 @@ function apply(ctx, config) {
 
   const quietRange = parseQuietHours(config.quietHours)
 
+  /** 指令前缀（`/` `.`）：指令消息不进历史池，也不算群活跃度 */
+  const prefixes = (() => {
+    const raw = ctx.root?.config?.prefix
+    const list = Array.isArray(raw) ? raw : []
+    return list.map((p) => String(p ?? '')).filter(Boolean)
+  })()
+
   const log = (...a) => config.debug && logger.info(...a)
 
   function poolOf(guildId) {
@@ -464,10 +471,13 @@ function apply(ctx, config) {
         const profile = profiles.get(guildId)
         if (profile && !ctx.bots[session.uid]) {
           const pool = poolOf(guildId)
+          const content = plainTextOf(session)
+          // 指令消息（/xxx、.xxx）不算"群聊热度"：它们不会进历史池，也不该把活跃度顶起来
+          if (prefixes.some((p) => content.startsWith(p))) return next()
           const msg = {
             id: String(session.userId ?? ''),
             name: session.author?.name || session.username || String(session.userId ?? ''),
-            content: plainTextOf(session),
+            content,
             ts: Date.now(),
             direct: isTalkingToBot(session),
             imgs: [],
@@ -577,10 +587,11 @@ function apply(ctx, config) {
       )
       .after('request_conversation')
     logger.info(
-      '主动发言已挂载（监控 %d 个群；轮询 %ds；免打扰 %s）',
+      '主动发言已挂载（监控 %d 个群；轮询 %ds；免打扰 %s；指令前缀 %s）',
       profiles.size,
       config.pollSeconds,
-      config.quietHours || '关'
+      config.quietHours || '关',
+      prefixes.join(' ') || '（无）'
     )
   })
 

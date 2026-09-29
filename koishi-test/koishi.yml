@@ -1,5 +1,3 @@
-# 测试实例：只连伪 OneBot（tools/fake-onebot.mjs），不碰真 QQ。
-# 生产实例在 koishi-app/，端口 5140；这个跑 5141。
 prefix:
   - /
   - .
