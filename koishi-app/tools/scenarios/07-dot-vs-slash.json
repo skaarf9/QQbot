@@ -1,0 +1,10 @@
+{
+  "_说明": "点号写法 vs 斜杠写法（探明哪种能被解析）",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/权限.我的"]] },
+    { "wait": 2500, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/qqbot.auth.me"]] },
+    { "wait": 2500, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/chatluna.stop"]] }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "_说明": "探明命令触发写法的真实链路测试",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/权限.我的"]] },
+    { "wait": 2000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/auth/me"]] },
+    { "wait": 2000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/qqbot.auth/me"]] },
+    { "wait": 2000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "!权限/我的"]] },
+    { "wait": 2000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/权限/我的"]] },
+    { "wait": 2000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/chatluna.stop"]] }
+  ]
+}

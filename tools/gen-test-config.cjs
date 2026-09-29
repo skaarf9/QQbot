@@ -53,6 +53,14 @@ ${adapterBlock}
     debug: true
   chatluna-followup:aa0010:
     debug: true
+  qqbot-auth:aa0012:
+    ownerIds:
+      - '2791932480'
+    adminIds:
+      - '10002'
+    blockedIds:
+      - '10004'
+    debug: true
   adapter-onebot:aa0011:
     protocol: ws
     endpoint: ws://127.0.0.1:3002
@@ -66,6 +74,20 @@ console.log('\n已写出 ' + path.join(TEST, 'koishi.yml'))
 const pkg = JSON.parse(fs.readFileSync(path.join(APP, 'package.json'), 'utf8'))
 pkg.name = 'qqbot-koishi-test'
 pkg.description = '测试实例（伪 OneBot）'
+
+// ★ 自研插件的依赖路径必须从 koishi-test 出发指回 koishi-app，
+//   因为生产配置里写的是 `file:external/...`，那是相对 koishi-app 的。
+//   照抄会得到 koishi-test\external\... 这个不存在的路径 → junction 是坏的。
+//   指向真实源码还有个好处：改插件代码两边同时生效（测试实例是 junction，不是拷贝）。
+const LOCAL_PLUGINS = [
+  'koishi-plugin-chatluna-emotion',
+  'koishi-plugin-chatluna-followup',
+  'koishi-plugin-chatluna-vision',
+  'koishi-plugin-qqbot-auth',
+]
+for (const name of LOCAL_PLUGINS) {
+  pkg.dependencies[name] = `file:../koishi-app/external/${name}`
+}
 fs.writeFileSync(
   path.join(TEST, 'package.json'),
   JSON.stringify(pkg, null, 2) + '\n',

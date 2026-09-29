@@ -22,6 +22,9 @@ logs/
 temp/
 *.tmp
 
+# ---- 测试台跑完留下的剧本回放（每次覆盖，不入库）----
+koishi-app/tools/last-run.log
+
 # ---- editor / OS ----
 .vscode/
 .idea/

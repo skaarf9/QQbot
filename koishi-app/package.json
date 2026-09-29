@@ -29,6 +29,7 @@
     "koishi-plugin-chatluna-followup": "file:external/koishi-plugin-chatluna-followup",
     "koishi-plugin-chatluna-storage-service": "^1.0.7",
     "koishi-plugin-chatluna-vision": "file:external/koishi-plugin-chatluna-vision",
+    "koishi-plugin-qqbot-auth": "file:external/koishi-plugin-qqbot-auth",
     "sharp": "^0.35.5"
   }
 }

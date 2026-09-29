@@ -1,0 +1,12 @@
+{
+  "_说明": "只测子指令触发",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/权限"]] },
+    { "wait": 2500, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/权限/我的"]] },
+    { "wait": 2500, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/权限.我的"]] },
+    { "wait": 2500, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/qqbot.auth/me"]] },
+    { "wait": 2500, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/权限/列表"]] }
+  ]
+}

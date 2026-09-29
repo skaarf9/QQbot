@@ -30,7 +30,7 @@
  * 注意：这个脚本只负责"喂"和"看"。它不判断对错，判断交给你（或我）读日志。
  */
 
-import { readFileSync, existsSync, createReadStream, statSync } from 'node:fs'
+import { readFileSync, existsSync, createReadStream, createWriteStream, statSync } from 'node:fs'
 import { createServer } from 'node:http'
 import { extname, join, normalize } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -83,8 +83,17 @@ const NICKNAME = scenario.nickname ?? '大肥鱼'
 const t0 = Date.now()
 const el = () => String(Date.now() - t0).padStart(6) + 'ms'
 
+// --log <文件>：把整个剧本回放写成文件，方便回看（终端里多行正文容易看漏）
+const LOG_FILE = getArg('log', null)
+let logStream = null
+if (LOG_FILE) {
+  logStream = createWriteStream(LOG_FILE, { flags: 'w' })
+}
+
 function say(...a) {
-  console.log(`[${el()}]`, ...a)
+  const line = `[${el()}] ${a.join(' ')}`
+  console.log(line)
+  logStream?.write(line + '\n')
 }
 
 // ------------------------------------------------------------------ 状态

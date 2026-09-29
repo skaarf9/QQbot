@@ -1,0 +1,17 @@
+{
+  "name": "koishi-plugin-qqbot-auth",
+  "version": "1.0.0",
+  "private": true,
+  "description": "R13 权限分级：authority 0-4 五级、名单驱动、危险指令提权",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "keywords": [
+    "chatbot",
+    "koishi",
+    "plugin",
+    "permission"
+  ]
+}

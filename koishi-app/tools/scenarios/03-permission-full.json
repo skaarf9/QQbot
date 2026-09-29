@@ -1,0 +1,84 @@
+{
+  "_说明": "R13 权限分级端到端验证（第二轮，覆盖越权与拉黑）",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    {
+      "wait": 0,
+      "group": "454444539",
+      "user": "10001",
+      "name": "普通群友",
+      "elements": [["text", "/chatluna.stop"]]
+    },
+    {
+      "wait": 2000,
+      "group": "454444539",
+      "user": "10001",
+      "name": "普通群友",
+      "elements": [["text", "/chatluna.use.model deepseek/deepseek/deepseek-v4-pro"]]
+    },
+    {
+      "wait": 2000,
+      "group": "454444539",
+      "user": "10001",
+      "name": "普通群友",
+      "elements": [["text", "/权限我的"]]
+    },
+    {
+      "wait": 2000,
+      "group": "454444539",
+      "user": "10002",
+      "name": "管理员甲",
+      "elements": [["text", "/权限设置 10002 4"]]
+    },
+    {
+      "wait": 2000,
+      "group": "454444539",
+      "user": "10002",
+      "name": "管理员甲",
+      "elements": [["text", "/权限我的"]]
+    },
+    {
+      "wait": 2000,
+      "group": "454444539",
+      "user": "10004",
+      "name": "被拉黑的人",
+      "elements": [["text", "/权限我的"]]
+    },
+    {
+      "wait": 2000,
+      "group": "454444539",
+      "user": "10004",
+      "name": "被拉黑的人",
+      "elements": [["text", "/help"]]
+    },
+    {
+      "wait": 2000,
+      "group": "454444539",
+      "user": "2791932480",
+      "name": "主人",
+      "elements": [["text", "/权限列表"]]
+    },
+    {
+      "wait": 2000,
+      "group": "454444539",
+      "user": "2791932480",
+      "name": "主人",
+      "elements": [["text", "/权限我的"]]
+    },
+    {
+      "wait": 2000,
+      "group": "454444539",
+      "user": "2791932480",
+      "name": "主人",
+      "elements": [["text", "/权限设置 10005 3"]]
+    },
+    {
+      "wait": 2000,
+      "group": "454444539",
+      "user": "2791932480",
+      "name": "主人",
+      "elements": [["text", "/help"]]
+    }
+  ]
+}

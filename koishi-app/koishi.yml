@@ -46,6 +46,15 @@ plugins:
     debug: true
   chatluna-followup:fh2k9p:
     debug: true
+  qqbot-auth:auth01:
+    ownerIds:
+      - '2791932480'
+    adminIds: []
+    trustedIds: []
+    blockedIds: []
+    raiseDangerousCommands: true
+    scanSeconds: 120
+    debug: true
   adapter-onebot:k9mmua:
     protocol: ws
     endpoint: ws://127.0.0.1:3001

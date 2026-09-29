@@ -1,0 +1,13 @@
+{
+  "_说明": "验证：1) 普通用户能用 /help /echo 吗  2) 被拉黑的人是否被拦",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["text", "/help"]] },
+    { "wait": 2500, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["text", "/echo 测试"]] },
+    { "wait": 2500, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["text", "/权限我的"]] },
+    { "wait": 2500, "group": "454444539", "user": "10004", "name": "被拉黑的人", "elements": [["text", "/权限我的"]] },
+    { "wait": 2500, "group": "454444539", "user": "10004", "name": "被拉黑的人", "elements": [["text", "/帮助"]] },
+    { "wait": 2500, "group": "454444539", "user": "10004", "name": "被拉黑的人", "elements": [["text", "/help"]] }
+  ]
+}
