@@ -1,0 +1,23 @@
+{
+  "_说明": "R15 屏蔽开关：新群默认静默 → 主人一句话开口 → 普通群友闭嘴无效（且完全静默）→ 主人闭嘴后连主动发言都被链闸门拦下 → /屏蔽状态 /屏蔽列表 /权限不足 各来一遍",
+  "_测试配置": "chatluna-guard defaultPolicy=silent + allowGroups 为空，所以这个剧本一开始群里是静默的",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 18000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["at", "2178517838"], ["text", " 你好呀，在吗"]] },
+    { "wait": 12000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["text", "/帮助"]] },
+    { "wait": 12000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["text", "开口"]] },
+    { "wait": 15000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "开口"]] },
+    { "wait": 28000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["at", "2178517838"], ["text", " 现在能听见了吗"]] },
+    { "wait": 12000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["text", "闭嘴"]] },
+    { "wait": 28000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["at", "2178517838"], ["text", " 你还在吗"]] },
+    { "wait": 12000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "闭嘴"]] },
+    { "wait": 20000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["at", "2178517838"], ["text", " 主人说话你也不理？"]] },
+    { "wait": 12000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/proactive.speak"]] },
+    { "wait": 12000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/屏蔽状态"]] },
+    { "wait": 12000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["text", "/闭嘴 454444539"]] },
+    { "wait": 15000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "开口"]] },
+    { "wait": 25000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/proactive.speak"]] },
+    { "wait": 12000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/屏蔽列表"]] }
+  ]
+}

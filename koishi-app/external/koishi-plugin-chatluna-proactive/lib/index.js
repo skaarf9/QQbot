@@ -41,7 +41,7 @@ const { Schema, Logger, h } = require('koishi')
 const name = 'chatluna-proactive'
 
 /** chatluna 服务不是立刻可用的，用 inject 等它（optional，缺了插件也不会挂） */
-const inject = { required: ['http'], optional: ['chatluna'] }
+const inject = { required: ['http'], optional: ['chatluna', 'qqbotGuard'] }
 
 const logger = new Logger('chatluna-proactive')
 
@@ -406,6 +406,12 @@ function apply(ctx, config) {
   /** 真正开口 */
   async function speak(guildId, kind, profile, state, pool) {
     if (state.locked) return false
+    // R15：被屏蔽的群连"想说话"都不该想。链闸门（guard 插件）也能拦住，
+    // 但那会白烧一次模型调用，所以这里先问一句。
+    if (ctx.qqbotGuard?.isBlocked({ platform: 'onebot', channelId: guildId, guildId, isDirect: false })) {
+      log('群 %s 处于屏蔽状态，跳过主动发言', guildId)
+      return false
+    }
     if (!pool.lastSession) {
       log('群 %s 还没有可用的 session，跳过', guildId)
       return false

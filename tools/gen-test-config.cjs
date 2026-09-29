@@ -119,6 +119,17 @@ ${proactiveBlock}
     persistConfig: true
     npmProxy: http://127.0.0.1:7890
     debug: true
+  chatluna-guard:aa0019:
+    enabled: true
+    defaultPolicy: silent
+    allowGroups: []
+    muteGroups: []
+    applyToPrivate: false
+    controlAuthority: 3
+    bareKeywords: true
+    confirmSeconds: 0
+    refreshSeconds: 5
+    debug: true
   chatluna-affinity:aa0015:
     scopeId: xingyuan
     botSelfIds:
@@ -167,6 +178,7 @@ pkg.description = '测试实例（伪 OneBot）'
 const LOCAL_PLUGINS = [
   'koishi-plugin-chatluna-emotion',
   'koishi-plugin-chatluna-followup',
+  'koishi-plugin-chatluna-guard',
   'koishi-plugin-chatluna-proactive',
   'koishi-plugin-chatluna-scene',
   'koishi-plugin-chatluna-selfext',

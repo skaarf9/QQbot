@@ -28,6 +28,7 @@
     "koishi-plugin-chatluna-deepseek-adapter": "^1.4.1",
     "koishi-plugin-chatluna-emotion": "file:external/koishi-plugin-chatluna-emotion",
     "koishi-plugin-chatluna-followup": "file:external/koishi-plugin-chatluna-followup",
+    "koishi-plugin-chatluna-guard": "file:external/koishi-plugin-chatluna-guard",
     "koishi-plugin-chatluna-long-memory": "^1.4.0",
     "koishi-plugin-chatluna-proactive": "file:external/koishi-plugin-chatluna-proactive",
     "koishi-plugin-chatluna-scene": "file:external/koishi-plugin-chatluna-scene",

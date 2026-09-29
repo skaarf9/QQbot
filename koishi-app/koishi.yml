@@ -103,6 +103,18 @@ plugins:
     allowInstall: true
     persistConfig: true
     debug: true
+  chatluna-guard:grd001:
+    enabled: true
+    defaultPolicy: silent
+    allowGroups:
+      - '454444539'
+    muteGroups: []
+    applyToPrivate: false
+    controlAuthority: 3
+    bareKeywords: true
+    confirmSeconds: 5
+    refreshSeconds: 10
+    debug: true
   chatluna-affinity:aff4me:
     scopeId: xingyuan
     botSelfIds:

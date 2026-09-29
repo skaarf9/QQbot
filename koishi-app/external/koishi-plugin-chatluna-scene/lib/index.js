@@ -39,7 +39,7 @@ const z = require('zod')
 const name = 'chatluna-scene'
 
 /** chatluna 的服务不是立刻可用的，用 inject 等它 */
-const inject = { required: ['database'], optional: ['chatluna'] }
+const inject = { required: ['database'], optional: ['chatluna', 'qqbotGuard'] }
 
 const TABLE = 'chatluna_scene'
 
@@ -304,7 +304,19 @@ function apply(ctx, config) {
       reason || '模型判定',
       config.endMode
     )
-    if (config.notifyOnAbort && reason && reason !== '模型判定' && ended.channelId) {
+    if (
+      config.notifyOnAbort &&
+      reason &&
+      reason !== '模型判定' &&
+      ended.channelId &&
+      // R15：被屏蔽的群一个字都不发（这条提示是绕过会话管线的直发，必须自己问一次）
+      !ctx.qqbotGuard?.isBlocked({
+        platform: 'onebot',
+        channelId: String(ended.channelId),
+        guildId: String(ended.channelId),
+        isDirect: false,
+      })
+    ) {
       // 自动中断才提示一句；模型自己收的局它自己会说
       try {
         const bot = ctx.bots.find((b) => String(b.selfId) === String(ended.selfId)) || ctx.bots[0]

@@ -1,0 +1,21 @@
+{
+  "name": "koishi-plugin-chatluna-guard",
+  "version": "0.1.0",
+  "description": "R15 群聊屏蔽开关：按群静默/放行，群里一句话或一条脚本立刻生效",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "private": true,
+  "keywords": ["chatbot", "koishi", "plugin", "chatluna", "guard", "mute"],
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "koishi": {
+    "description": {
+      "zh": "群聊屏蔽开关：被静默的群里 bot 一个字都不回（连指令都不执行），群里发 /闭嘴 立刻生效，也可用脚本/HTTP 控制"
+    },
+    "service": {
+      "required": ["database", "server"],
+      "optional": ["chatluna"]
+    }
+  }
+}

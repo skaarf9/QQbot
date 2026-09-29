@@ -97,6 +97,17 @@ plugins:
     persistConfig: true
     npmProxy: http://127.0.0.1:7890
     debug: true
+  chatluna-guard:aa0019:
+    enabled: true
+    defaultPolicy: silent
+    allowGroups: []
+    muteGroups: []
+    applyToPrivate: false
+    controlAuthority: 3
+    bareKeywords: true
+    confirmSeconds: 0
+    refreshSeconds: 5
+    debug: true
   chatluna-affinity:aa0015:
     scopeId: xingyuan
     botSelfIds:
