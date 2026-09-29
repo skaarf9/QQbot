@@ -67,6 +67,22 @@ plugins:
     maxSendableImages: 2000
     occurrenceTtlDays: 10
     judgeTimeoutMinutes: 10
+  chatluna-affinity:aff4me:
+    scopeId: xingyuan
+    botSelfIds:
+      - '2178517838'
+    variableSettings:
+      affinityVariableName: affinity
+    nativeToolSettings:
+      enabledNativeTools:
+        - affinity
+        - userAlias
+    xmlToolSettings:
+      enableAffinityXmlToolCall: false
+      enableBlacklistXmlToolCall: false
+      enableRelationshipXmlToolCall: false
+      enableUserAliasXmlToolCall: false
+    debugLogging: true
   qqbot-auth:auth01:
     ownerIds:
       - '2791932480'
@@ -76,6 +92,9 @@ plugins:
     raiseDangerousCommands: true
     scanSeconds: 120
     debug: true
+    affinityScopeId: xingyuan
+    affinityPromoteAt: 51
+    affinityDemoteAt: 40
   adapter-onebot:k9mmua:
     protocol: ws
     endpoint: ws://127.0.0.1:3001

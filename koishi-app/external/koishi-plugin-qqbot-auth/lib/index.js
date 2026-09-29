@@ -114,7 +114,7 @@ module.exports.Config = Schema.object({
     .default([]),
   trustedIds: Schema.array(String)
     .role('table')
-    .description('信任（等级 2）。暂时没有额外能力，留给 R4 好感度用。')
+    .description('信任（等级 2）。可查长期记忆 / 看表情包库。留空也行——开了好感度桥会自动给。')
     .default([]),
   blockedIds: Schema.array(String)
     .role('table')
@@ -129,6 +129,19 @@ module.exports.Config = Schema.object({
     .description('启动后持续重扫的时长（秒）。ChatLuna 的指令注册在嵌套 ready 里，需要反复扫才抓得全。')
     .default(120),
   debug: Schema.boolean().description('打印扫描与提权明细。').default(true),
+
+  // ---- R4 好感度 → 信任（等级 2）----
+  affinityScopeId: Schema.string()
+    .description(
+      '接 chatluna-affinity 的好感度桥：填它的 scopeId 即启用（留空=关）。启用后「不在任何名单里」的人按好感度自动给 2 级。'
+    )
+    .default(''),
+  affinityPromoteAt: Schema.natural()
+    .description('好感度 ≥ 这个值 → 提到等级 2（信任）。chatluna-affinity 的区间默认是 51 起「熟悉」。')
+    .default(51),
+  affinityDemoteAt: Schema.natural()
+    .description('好感度 ≤ 这个值 → 降回等级 1。故意留出滞后带（51↔40），免得在阈值上反复横跳。')
+    .default(40),
 })
 
 module.exports.apply = (ctx, config) => {
@@ -142,6 +155,9 @@ module.exports.apply = (ctx, config) => {
     raiseDangerousCommands: true,
     scanSeconds: 120,
     debug: true,
+    affinityScopeId: '',
+    affinityPromoteAt: 51,
+    affinityDemoteAt: 40,
     ...(config ?? {}),
   }
 
@@ -160,17 +176,77 @@ module.exports.apply = (ctx, config) => {
     return null
   }
 
+  // ------------------------------------------------------------ R4 好感度 → 信任
+  //
+  // 读的是 chatluna-affinity 的表 `chatluna_affinity_v2`（主键是 scopeId + userId，
+  // 见插件 `lib/index.js:990-1007`）。只在「不在任何名单里，且当前等级 ≤2」时接管 ——
+  // 3/4 级是人工用 /权限设置 给的，不能被好感度掀掉。
+  //
+  // 加 10 秒缓存：attach-user 每条消息都跑，不能每条都查库；但也不能太久
+  // （好感度是一轮对话里就可能变的东西，缓存 60 秒会让升级慢半拍，实测踩过）。
+  // 带内（40 < aff < 51）返回 'keep'，表示"维持现状"，避免在阈值上反复横跳。
+  const AFFINITY_TABLE = 'chatluna_affinity_v2'
+  const AFFINITY_TTL = 10_000
+  const affCache = new Map() // userId -> { level, at }
+
+  async function affinityLevel(userId) {
+    if (!cfg.affinityScopeId) return null
+    const key = String(userId)
+    const now = Date.now()
+    const hit = affCache.get(key)
+    if (hit && now - hit.at < AFFINITY_TTL) return hit.level
+
+    let level = null
+    const db = ctx.get('database')
+    if (db) {
+      try {
+        const rows = await db.get(AFFINITY_TABLE, {
+          scopeId: cfg.affinityScopeId,
+          userId: key,
+        })
+        if (rows && rows.length) {
+          const aff = Number(rows[0].affinity)
+          if (Number.isFinite(aff)) {
+            if (aff >= cfg.affinityPromoteAt) level = 2
+            else if (aff <= cfg.affinityDemoteAt) level = 1
+            else level = 'keep'
+          }
+        }
+      } catch (e) {
+        // 表还没建（affinity 插件没装/没起来）时不要刷屏
+        if (cfg.debug) logger.warn('读好感度失败：%s', e.message)
+      }
+    }
+    affCache.set(key, { level, at: now })
+    return level
+  }
+
   // ------------------------------------------------------------ 名单 → authority
   //
   // 挂在 `attach-user` 上：该钩子在 session.observeUser() **之后**触发
   // （core:803-804），此时 session.user 已存在且被 observe 包裹 ——
   // 改 authority 会被自动写回数据库；同时又早于指令解析，当次消息即生效。
-  ctx.on('attach-user', (session) => {
-    const want = authorityOf(session.userId)
-    if (want === null || !session.user) return
+  // 这个钩子是用 `await ctx.serial(...)` 调的（core:804），所以可以是 async。
+  ctx.on('attach-user', async (session) => {
+    if (!session.user) return
+    let want = authorityOf(session.userId)
+    let why = '名单'
+
+    if (want === null && cfg.affinityScopeId) {
+      const cur = session.user.authority ?? 1
+      if (cur <= 2) {
+        const aff = await affinityLevel(session.userId)
+        if (aff === 2 && cur < 2) want = 2
+        else if (aff === 1 && cur === 2) want = 1
+        if (want !== null) why = '好感度'
+      }
+    }
+
+    if (want === null) return
     if (session.user.authority === want) return
     logger.info(
-      '用户 %s 的权限 %s → %s（%s）',
+      '%s：用户 %s 的权限 %s → %s（%s）',
+      why,
       session.userId,
       session.user.authority,
       want,

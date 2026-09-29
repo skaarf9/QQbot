@@ -78,6 +78,14 @@ const scenario = scenarioPath
 const SELF_ID = String(scenario.selfId ?? '2178517838')
 const NICKNAME = scenario.nickname ?? '大肥鱼'
 
+// 场景里出现过的「QQ 号 → 昵称」，供 get_group_member_info / _list 用
+// （有些插件会先拉成员列表，比如 chatluna-affinity 的 /好感度排行）
+const memberNames = new Map()
+for (const step of scenario.steps ?? []) {
+  if (step.user != null) memberNames.set(String(step.user), step.name ?? String(step.user))
+}
+memberNames.set(SELF_ID, NICKNAME)
+
 // ------------------------------------------------------------------ 输出
 
 const t0 = Date.now()
@@ -189,6 +197,39 @@ function handleApi(msg) {
         message: m.segs,
         raw_message: m.raw,
       })
+    }
+
+    case 'get_group_member_info': {
+      const uid = String(params.user_id)
+      const name = memberNames.get(uid) ?? uid
+      return reply(echo, {
+        user_id: +uid,
+        nickname: name,
+        card: '',
+        role: uid === SELF_ID ? 'admin' : 'member',
+        sex: 'unknown',
+        age: 0,
+        area: '',
+        join_time: Math.floor(Date.now() / 1000) - 86400,
+        last_sent_time: Math.floor(Date.now() / 1000),
+        level: '1',
+        title: '',
+      })
+    }
+
+    case 'get_group_member_list': {
+      // ★ 有些插件（如 chatluna-affinity 的 /好感度排行）要先拿全群成员列表。
+      //   不知道的号就返回场景里出现过的那些人（含 bot 自己）。
+      const ids = new Set([SELF_ID, ...memberNames.keys()])
+      return reply(
+        echo,
+        [...ids].map((uid) => ({
+          user_id: +uid,
+          nickname: memberNames.get(uid) ?? uid,
+          card: '',
+          role: uid === SELF_ID ? 'admin' : 'member',
+        }))
+      )
     }
 
     case 'send_group_msg':
