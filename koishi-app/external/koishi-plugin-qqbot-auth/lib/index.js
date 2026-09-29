@@ -71,10 +71,13 @@ const OVERRIDES = [
 
   // ---- 自研插件里的管理向指令 ----
   ['followup', 3, '群聊跟进状态'],
-  ['emotion.set', 3, '手动设置情绪'],
-  ['emotion/reset', 3, '重置情绪'],
-  ['vision.stat', 3, '图片缓存统计'],
-  ['vision/forget', 3, '删除图片缓存'],
+  // ★ 这 4 条的「真名」不是 `emotion.set` —— `ctx.command('emotion/set')` 里的
+  //   `/set` 被当成了**下一层的名字**，实际注册成 `emotion` 的子指令 `set`
+  //   （名字和别名都是 `set`）。所以这里写成「父名>子名」表达父子关系。
+  ['emotion>set', 3, '手动设置情绪'],
+  ['emotion>reset', 3, '重置情绪'],
+  ['vision>stat', 3, '图片缓存统计'],
+  ['vision>forget', 3, '删除图片缓存'],
 ]
 
 module.exports.name = 'qqbot-auth'
@@ -156,6 +159,31 @@ module.exports.apply = (ctx, config) => {
   })
 
   // ------------------------------------------------------------ 有效等级
+  /**
+   * 把提权表里的写法解析成真正的 Command 对象。
+   *
+   * ★ 为什么不能简单 `get(name)`：Koishi 的命令名/别名跟"用户敲什么"并不总一致，
+   *   两种都踩过：
+   *   · `ctx.command('emotion/set')` 里的 `/set` 是**下一层的名字**，
+   *     实际注册成 `emotion` 的子指令 `set`（名字和别名都是 `set`）——
+   *     `get('emotion.set')` 永远查不到。这种用 `'父名>子名'` 表达。
+   *   · 反过来有的指令 `c.name` 是 `chatluna.admin.purge-legacy`，
+   *     但用户实际敲的是别名 `chatluna.admin` —— `get()` 能把名字和别名都查到。
+   */
+  function resolveCmd(spec) {
+    const gt = spec.indexOf('>')
+    if (gt < 0) return ctx.$commander?.get?.(spec)
+
+    const parent = ctx.$commander?.get?.(spec.slice(0, gt))
+    if (!parent) return undefined
+    const child = spec.slice(gt + 1)
+    const kids = parent.children ?? []
+    return (
+      kids.find((c) => c.name === child) ??
+      kids.find((c) => Object.hasOwn(c._aliases ?? {}, child))
+    )
+  }
+
   function effectiveLevel(cmd) {
     let max = null
     let node = cmd
@@ -177,61 +205,69 @@ module.exports.apply = (ctx, config) => {
   // ChatLuna 的指令注册在**嵌套的第二个 ready** 里（chatluna lib:8109），
   // 所以一次扫描抓不全 —— 启动后按 scanSeconds 持续重扫，收敛后自行停止。
   let scanTimer = null
-  let lastPending = null
+  let lastMissing = null
   let dumpedNames = false
 
   function scanOnce(why) {
     const list = ctx.$commander?._commandList
-    if (!Array.isArray(list) || !list.length) return { pending: ['(指令表为空)'] }
+    if (!Array.isArray(list) || !list.length) return { missing: ['(指令表为空)'], upToDate: [], raised: 0 }
 
-    if (!cfg.raiseDangerousCommands) return { pending: [] }
+    if (!cfg.raiseDangerousCommands) return { missing: [], upToDate: [], raised: 0 }
 
-    // 首次扫描把自研插件的指令真名打出来，方便核对提权表有没有写错
+    // 首次扫描把自研插件的指令打出来，方便核对提权表有没有写错
     if (cfg.debug && !dumpedNames) {
       dumpedNames = true
-      const mine = list.filter((c) => /^(emotion|vision|followup|qqbot)/.test(c.name))
-      logger.info(
-        '自研插件指令真名：%s',
-        mine.map((c) => `${c.name}(a=${effectiveLevel(c)})`).join('  ') || '（一条都没有）'
-      )
+      const mine = []
+      for (const c of list) {
+        const names = [...new Set([c.name, ...Object.keys(c._aliases ?? {})])]
+        if (names.some((n) => /^(emotion|vision|followup|qqbot)/.test(n))) {
+          mine.push(`${names.join('|')}(a=${effectiveLevel(c)})`)
+        }
+      }
+      logger.info('自研插件指令：%s', mine.join('  ') || '（一条都没有）')
     }
 
-    let changed = 0
-    const pending = []
-    for (const [name, level, desc] of OVERRIDES) {
-      // 前缀匹配：`chatluna.use` 要一并命中 `chatluna.use.model`
-      const hits = list.filter((c) => c.name === name || c.name.startsWith(name + '.'))
-      if (!hits.length) {
-        pending.push(name)
+    let raised = 0
+    const missing = [] // 指令还没注册出来（等下一轮）
+    const upToDate = [] // 指令存在但**本来就达标**，不需要我们动手
+    for (const [spec, level, desc] of OVERRIDES) {
+      const cmd = resolveCmd(spec)
+      if (!cmd) {
+        missing.push(spec)
         continue
       }
-      for (const cmd of hits) {
-        const before = effectiveLevel(cmd)
-        if (before !== null && before >= level) continue
-        cmd.config.permissions = [`authority:${level}`]
-        changed++
-        if (cfg.debug) logger.info('提权 %s（%s）：%s → %s', cmd.name, desc, before, level)
+      const before = effectiveLevel(cmd)
+      if (before !== null && before >= level) {
+        upToDate.push(spec)
+        continue
       }
+      cmd.config.permissions = [`authority:${level}`]
+      raised++
+      if (cfg.debug) logger.info('提权 %s（%s）：%s → %s', spec, desc, before, level)
     }
-    return { pending, changed, total: list.length }
+    return { missing, upToDate, raised, total: list.length }
   }
 
   function tick(round) {
-    const { pending, changed, total } = scanOnce(`第 ${round} 轮`)
-    const key = pending.join(',')
-    if (!pending.length) {
-      logger.info('提权规则已全部命中（指令表 %d 条），停止重扫', total)
+    const { missing, upToDate, raised, total } = scanOnce()
+    const key = missing.join(',')
+    if (!missing.length) {
+      logger.info(
+        '提权规则已全部命中（指令表 %d 条；其中 %d 条本来就达标、未改动），停止重扫',
+        total,
+        upToDate.length
+      )
       clearInterval(scanTimer)
       scanTimer = null
-      lastPending = null
+      lastMissing = null
       return
     }
-    // 只在"有变化"或"待出现集合变了"时说话，避免每 2 秒刷屏
-    if (key !== lastPending) {
-      logger.info('还没出现的指令：%s（继续扫）', key)
-      lastPending = key
-    } else if (cfg.debug && changed) {
-      logger.info('第 %d 轮：新增提权 %d 处', round, changed)
+    // 只在"缺哪些"变了或"有实际提权"时说话，避免每 2 秒刷屏
+    if (key !== lastMissing) {
+      logger.info('还没注册出来的指令：%s（继续扫）', key)
+      lastMissing = key
+    } else if (cfg.debug && raised) {
+      logger.info('第 %d 轮：新增提权 %d 处', round, raised)
     }
   }
 
@@ -241,7 +277,11 @@ module.exports.apply = (ctx, config) => {
       round++
       tick(round)
       if (round * 2000 >= cfg.scanSeconds * 1000 && scanTimer) {
-        logger.warn('重扫到时（%d 秒），仍有指令未出现，放弃', cfg.scanSeconds)
+        logger.warn(
+          '重扫到时（%d 秒），这些指令一直没注册出来：%s（多半是插件没装/名字写错）',
+          cfg.scanSeconds,
+          lastMissing ?? '（无）'
+        )
         clearInterval(scanTimer)
         scanTimer = null
       }
