@@ -1,3 +1,5 @@
+# 测试实例：只连伪 OneBot（tools/fake-onebot.mjs），不碰真 QQ。
+# 生产实例在 koishi-app/，端口 5140；这个跑 5141。
 prefix:
   - /
   - .
@@ -39,6 +41,23 @@ plugins:
     debug: true
   chatluna-followup:aa0010:
     debug: true
+  chatluna-proactive:aa0016:
+    enabled: true
+    debug: true
+    pollSeconds: 3
+    cooldownSeconds: 0
+    failureCooldownSeconds: 30
+    historyLimit: 20
+    maxImages: 3
+    groups:
+      - guildId: '454444539'
+        enableActivity: true
+        activityThreshold: 0.05
+        thresholdCeiling: 0.05
+        activityMessageInterval: 5
+        enableIdle: true
+        idleMinutes: 1
+        idleJitter: false
   chatluna-long-memory:aa0013:
     enabledLayers:
       - Guild
@@ -60,6 +79,26 @@ plugins:
     maxSendableImages: 2000
     occurrenceTtlDays: 10
     judgeTimeoutMinutes: 10
+  chatluna-scene:aa0017:
+    enabled: true
+    variableName: scene
+    scopeMode: channel
+    endMode: clear
+    abortIdleMinutes: 1
+    maxMinutes: 60
+    notifyOnAbort: false
+    enableTool: true
+    debug: true
+  chatluna-selfext:aa0018:
+    enabled: true
+    cacheMinutes: 30
+    maxResults: 8
+    ownerIds:
+      - '2791932480'
+    allowInstall: true
+    persistConfig: true
+    npmProxy: http://127.0.0.1:7890
+    debug: true
   chatluna-affinity:aa0015:
     scopeId: xingyuan
     botSelfIds:

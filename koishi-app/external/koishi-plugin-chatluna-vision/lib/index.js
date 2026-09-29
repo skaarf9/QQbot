@@ -64,6 +64,15 @@ const Config = Schema.intersect([
     parseAllGroupImages: Schema.boolean().default(false).description(
       '群里是否无条件解析所有图片。默认关——群友发图太频繁，全解析烧钱又慢'
     ),
+    parseWhenUserIds: Schema.array(Schema.string())
+      .role('table')
+      .default(['__proactive_trigger__'])
+      .description(
+        '这些"用户"发的图无条件解析（R9 主动插话用）。' +
+          'chatluna-proactive-trigger 触发时伪造成这个 userId，' +
+          '它会把群历史里的图转成 data URL 塞进来；' +
+          '如果不在这里放行，本插件会把那些图当成"群里没叫 bot 的图"直接丢掉'
+      ),
     ignoreUnparsedInGroup: Schema.boolean().default(true).description(
       '群里遇到未解析过的图是否"装作没看见"。关掉则退化成 ChatLuna 默认行为（塞一个打不开的 URL）'
     ),
@@ -166,8 +175,30 @@ function apply(ctx, config) {
     ])
   }
 
-  /** 下载图片字节。必须当场做——rkey 有 TTL */
+  /**
+   * 下载图片字节。必须当场做——rkey 有 TTL。
+   *
+   * ★ 要支持 `data:` URL：R9 的 chatluna-proactive-trigger 会把群历史里的图
+   *   先缓存到本地、再以 `data:image/png;base64,...` 的形式塞进 elements
+   *   （它自己的注释：避免本地文件路径被 chatluna 当成 HTTP URL 去读）。
+   *   ctx.http.file() 不认 data URL，不特判就会整个 fallback 到"忽略未解析图片"。
+   */
   async function download(url) {
+    const s = String(url || '')
+    if (s.startsWith('data:')) {
+      const comma = s.indexOf(',')
+      if (comma < 0) throw new Error('data URL 格式不对')
+      const header = s.slice(5, comma) // 形如 image/png;base64
+      const payload = s.slice(comma + 1)
+      const isBase64 = /;base64/i.test(header)
+      const mime = String(header.split(';')[0] || 'image/jpeg').trim() || 'image/jpeg'
+      const buf = isBase64
+        ? Buffer.from(payload, 'base64')
+        : Buffer.from(decodeURIComponent(payload), 'utf8')
+      if (buf.length === 0) throw new Error('data URL 解出 0 字节')
+      if (buf.length > config.maxImageBytes) throw new Error(`图片过大 ${buf.length} 字节`)
+      return { buf, mime: /^image\//.test(mime) ? mime : 'image/jpeg' }
+    }
     const res = await ctx.http.file(url, { timeout: config.timeout })
     const data = res?.data
     if (!data) throw new Error('下载结果为空')
@@ -299,7 +330,11 @@ function apply(ctx, config) {
         }
 
         // ---- 3) 没命中，决定要不要现场解析 ----
+        // 主动插话（R9）伪装的 userId 无条件放行：那些图是插件特意从群历史里
+        // 挑出来缓存好的，丢掉就等于让 bot"瞎着"插话。
+        const forced = (config.parseWhenUserIds || []).includes(String(session.userId))
         const shouldParse =
+          forced ||
           config.parseAllGroupImages ||
           (isDirect && config.parseInPrivate) ||
           (!isDirect && config.parseInGroupWhenAt && atBot)
@@ -400,14 +435,16 @@ function apply(ctx, config) {
   })
 
   // 人工干预：清缓存 / 看统计
-  ctx.command('vision/stat', '看图片解析缓存统计', { authority: 3 }).action(async () => {
+  // ★ 点号全名（`vision.stat`），不是 `vision/stat`：斜杠写法的子指令名字只有 `stat`，
+  //   而 Commander 按整名查 _aliases（core:1411/1432）→ 用户敲 `/vision.stat` 永远没反应。
+  ctx.command('vision.stat', '看图片解析缓存统计', { authority: 3 }).action(async () => {
     const rows = await ctx.database.get(TABLE, {})
     const total = rows.reduce((s, r) => s + (r.bytes || 0), 0)
     return `已缓存 ${rows.length} 张图的描述，共 ${(total / 1024 / 1024).toFixed(1)} MB 原图`
   })
 
   ctx
-    .command('vision/forget <hash:string>', '删掉某张图的解析缓存', { authority: 3 })
+    .command('vision.forget <hash:string>', '删掉某张图的解析缓存', { authority: 3 })
     .action(async (_a, hash) => {
       if (!hash) return '要给 hash 前缀'
       const rows = await ctx.database.get(TABLE, {})

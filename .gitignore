@@ -25,6 +25,13 @@ temp/
 # ---- 测试台跑完留下的剧本回放（每次覆盖，不入库）----
 koishi-app/tools/last-run.log
 
+# ---- R12 自我扩展写配置前的备份（每次 /插件安装 都会生成一个，不入库）----
+koishi-test/koishi.yml.bak-*
+koishi-app/koishi.yml.bak-*
+
+# ---- 调研/探针临时目录（抓下来的 registry、npm tarball 等）----
+.scratch/
+
 # ---- editor / OS ----
 .vscode/
 .idea/

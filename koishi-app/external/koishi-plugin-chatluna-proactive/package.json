@@ -1,0 +1,21 @@
+{
+  "name": "koishi-plugin-chatluna-proactive",
+  "version": "0.1.0",
+  "description": "R9 择机插话：盯群聊活跃度与冷场，自己决定什么时候开口",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "private": true,
+  "keywords": ["chatbot", "koishi", "plugin", "chatluna", "proactive"],
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "koishi": {
+    "description": {
+      "zh": "主动发言：群聊热起来时插一句、冷场久了起个话头（活跃度打分 + 群级历史池 + 冷却）"
+    },
+    "service": {
+      "required": ["http"],
+      "optional": ["chatluna"]
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "_说明": "R12 冷装路径：装一个启动时还不存在的包（koishi-plugin-jrrp），热挂载解析不到 → 应自动触发重启，重启后用 /jrrp 真跑起来",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 1000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/插件安装 koishi-plugin-jrrp"]] },
+    { "wait": 45000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/jrrp"]] },
+    { "wait": 10000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["text", "/jrrp"]] },
+    { "wait": 15000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/插件安装 koishi-plugin-weather"]] },
+    { "wait": 40000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/weather 116.4 39.9"]] }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "_说明": "全指令回归：把项目里所有能敲的指令按正确写法过一遍（重点是点号式子指令），普通群友的越权也要拒绝",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 1000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/帮助"]] },
+    { "wait": 2500, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/权限我的"]] },
+    { "wait": 2500, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/权限列表"]] },
+    { "wait": 2500, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/emotion"]] },
+    { "wait": 2500, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/emotion.set 烦躁 0.8"]] },
+    { "wait": 2500, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/emotion.list"]] },
+    { "wait": 2500, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/emotion.reset"]] },
+    { "wait": 2500, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/scene.begin 猜数字 对方猜中我出的数"]] },
+    { "wait": 2500, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/scene"]] },
+    { "wait": 2500, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/scene.end"]] },
+    { "wait": 3000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/scene"]] },
+    { "wait": 2500, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/vision.stat"]] },
+    { "wait": 2500, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/proactive"]] },
+    { "wait": 2500, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/sticker.stat"]] },
+    { "wait": 3000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/好感度排行"]] },
+    { "wait": 3000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["text", "/权限我的"]] },
+    { "wait": 2500, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["text", "/sticker.stat"]] },
+    { "wait": 2500, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["text", "/scene.end"]] },
+    { "wait": 15000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["text", "/插件搜索 天气"]] },
+    { "wait": 20000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/插件申请列表"]] }
+  ]
+}

@@ -191,27 +191,33 @@ function apply(ctx, config) {
     return `当前情绪：${st.emotion}${pct > 0 ? `（强度 ${pct}%）` : ''}\n作用域：${key}`
   })
 
+  // ★★ 子指令必须写**点号全名**（`emotion.set`），不能写 `emotion/set`：
+  //   `ctx.command('a/b')` 注册出来的子指令名字只有 `b`（`ctx.command('a.b')` 才是整名 `a.b`），
+  //   而 Commander 解析时是拿整名去 flat 的 `_commandList` 里查 `_aliases`
+  //   （`@koishijs/core` core:1411 `get` / core:1432 `_resolve`）。
+  //   所以 `/emotion.set` 会**完全没反应**（连 `command emotion` 都不打），只有 `/emotion` 能用。
+  //   实测踩到：R11 的 `/scene.begin` 就是这么哑掉的。改之前先看这里。
   ctx
-    .command('emotion/set <name:string> [intensity:number]', '设置 bot 当前情绪', { authority: 3 })
-    .usage('强度 0~1，省略则按 1 计。例：/emotion/set 烦躁 0.8')
+    .command('emotion.set <name:string> [intensity:number]', '设置 bot 当前情绪', { authority: 3 })
+    .usage('强度 0~1，省略则按 1 计。例：/emotion.set 烦躁 0.8')
     .action(async ({ session }, name2, intensity) => {
-      if (!name2) return '要指定情绪名。用 /emotion/list 看有哪些。'
+      if (!name2) return '要指定情绪名。用 /emotion.list 看有哪些。'
       const def = (config.emotions || []).find((e) => e.name === name2)
-      if (!def) return `没有「${name2}」这个情绪。用 /emotion/list 看有哪些。`
+      if (!def) return `没有「${name2}」这个情绪。用 /emotion.list 看有哪些。`
       const key = scopeKeyOf(session, config)
       const v = intensity == null ? 1 : intensity
       await writeState(ctx, config, key, name2, v, '手动指令设置')
       return `已把情绪设为「${name2}」，强度 ${Math.round(Math.max(0, Math.min(1, v)) * 100)}%`
     })
 
-  ctx.command('emotion/list', '列出所有可用情绪').action(() => {
+  ctx.command('emotion.list', '列出所有可用情绪').action(() => {
     return (
       '可用情绪：\n' +
       (config.emotions || []).map((e) => `  ${e.name}  ${e.desc || ''}`).join('\n')
     )
   })
 
-  ctx.command('emotion/reset', '把情绪重置回基线', { authority: 3 }).action(async ({ session }) => {
+  ctx.command('emotion.reset', '把情绪重置回基线', { authority: 3 }).action(async ({ session }) => {
     const key = scopeKeyOf(session, config)
     await writeState(ctx, config, key, config.baseline, 0, '手动重置')
     return `已重置为「${config.baseline}」`

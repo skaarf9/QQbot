@@ -1,0 +1,21 @@
+{
+  "name": "koishi-plugin-chatluna-scene",
+  "version": "0.1.0",
+  "description": "R11 会话生命周期：有始有终的互动（游戏/任务）状态机 + 收局时终止会话",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "private": true,
+  "keywords": ["chatbot", "koishi", "plugin", "chatluna", "scene", "lifecycle"],
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "koishi": {
+    "description": {
+      "zh": "会话生命周期：模型自己开局收局，收局时清掉这条会话的上下文；长时间没人接话自动判中断"
+    },
+    "service": {
+      "required": ["database"],
+      "optional": ["chatluna"]
+    }
+  }
+}

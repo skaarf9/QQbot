@@ -46,6 +46,23 @@ plugins:
     debug: true
   chatluna-followup:fh2k9p:
     debug: true
+  chatluna-proactive:pr0001:
+    enabled: true
+    debug: true
+    pollSeconds: 5
+    cooldownSeconds: 300
+    failureCooldownSeconds: 60
+    historyLimit: 20
+    maxImages: 3
+    groups:
+      - guildId: '454444539'
+        enableActivity: true
+        activityThreshold: 0.5
+        thresholdCeiling: 0.65
+        activityMessageInterval: 15
+        enableIdle: true
+        idleMinutes: 180
+        idleJitter: true
   chatluna-long-memory:lm0001:
     enabledLayers:
       - Guild
@@ -67,6 +84,25 @@ plugins:
     maxSendableImages: 2000
     occurrenceTtlDays: 10
     judgeTimeoutMinutes: 10
+  chatluna-scene:scn001:
+    enabled: true
+    variableName: scene
+    scopeMode: channel
+    endMode: clear
+    abortIdleMinutes: 30
+    maxMinutes: 180
+    notifyOnAbort: false
+    enableTool: true
+    debug: true
+  chatluna-selfext:ext001:
+    enabled: true
+    cacheMinutes: 30
+    maxResults: 8
+    ownerIds:
+      - '2791932480'
+    allowInstall: true
+    persistConfig: true
+    debug: true
   chatluna-affinity:aff4me:
     scopeId: xingyuan
     botSelfIds:

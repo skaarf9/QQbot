@@ -70,7 +70,22 @@ console.log('（剧本回放会写到 ' + logFile + '）')
 
 setTimeout(() => {
   console.log('\n=== 2) 起测试实例 ===')
-  start('koishi', process.execPath, [path.join(APP, 'node_modules', 'koishi', 'bin.js'), 'start', '--log-level', '3'], TEST)
+  // ★ 必须用**测试实例自己的** koishi 二进制，不能用 koishi-app 的：
+  //   插件名的解析根不是 cwd，而是"跑起来的那个 koishi 装在哪" ——
+  //   @koishijs/loader 里 `nsRequire({ namespace:'koishi', prefix:'plugin', dirname: baseDir })`
+  //   的 paths() 对完整包名直接返回裸名，最后落到 `require.resolve(name)`，
+  //   而 require.resolve 是**相对 ns-require 自己所在目录**往上找 node_modules 的。
+  //   用 APP 的 bin 起，解析根就是 koishi-app/node_modules：
+  //     · 测试实例里 npm 装的新插件（在 koishi-test/node_modules）永远解析不到
+  //     · 实际加载的却可能是 koishi-app 那份同名包，两边版本一不一致都看不出来
+  //   实测现象：`/插件安装 koishi-plugin-weather` 装完 → `cannot resolve plugin`
+  //   → 连重启都救不回来（因为重启后解析根还是 koishi-app）。
+  const testBin = path.join(TEST, 'node_modules', 'koishi', 'bin.js')
+  const bin = require('node:fs').existsSync(testBin)
+    ? testBin
+    : path.join(APP, 'node_modules', 'koishi', 'bin.js')
+  console.log('    koishi 二进制：' + bin)
+  start('koishi', process.execPath, [bin, 'start', '--log-level', '3'], TEST)
 }, 2500)
 
 setTimeout(() => {

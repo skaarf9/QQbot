@@ -14,6 +14,29 @@ const adapterBlock = m[1].replace(/\s+$/, '')
 console.log('抓到 adapter 配置：')
 console.log(adapterBlock)
 
+// R9 主动发言：**不再从生产配置抄**（自写插件的提示词是 schema 默认值，配置里只有数字），
+// 测试台要把阈值调低、冷却归零、空闲压到 1 分钟，好在一两分钟内复现"没人叫它，它自己开口"。
+// ★ 提示词想验证生产版本的话，把 koishi-app\koishi.yml 里 chatluna-proactive 的
+//   activityPrompt / idlePrompt 抄过来即可（默认值就在插件源码里，两边一字不差）。
+const proactiveBlock = [
+  '    enabled: true',
+  '    debug: true',
+  '    pollSeconds: 3',
+  '    cooldownSeconds: 0',
+  '    failureCooldownSeconds: 30',
+  '    historyLimit: 20',
+  '    maxImages: 3',
+  '    groups:',
+  "      - guildId: '454444539'",
+  '        enableActivity: true',
+  '        activityThreshold: 0.05',
+  '        thresholdCeiling: 0.05',
+  '        activityMessageInterval: 5',
+  '        enableIdle: true',
+  '        idleMinutes: 1',
+  '        idleJitter: false',
+].join('\n')
+
 const yml = `# 测试实例：只连伪 OneBot（tools/fake-onebot.mjs），不碰真 QQ。
 # 生产实例在 koishi-app/，端口 5140；这个跑 5141。
 prefix:
@@ -53,6 +76,8 @@ ${adapterBlock}
     debug: true
   chatluna-followup:aa0010:
     debug: true
+  chatluna-proactive:aa0016:
+${proactiveBlock}
   chatluna-long-memory:aa0013:
     enabledLayers:
       - Guild
@@ -74,6 +99,26 @@ ${adapterBlock}
     maxSendableImages: 2000
     occurrenceTtlDays: 10
     judgeTimeoutMinutes: 10
+  chatluna-scene:aa0017:
+    enabled: true
+    variableName: scene
+    scopeMode: channel
+    endMode: clear
+    abortIdleMinutes: 1
+    maxMinutes: 60
+    notifyOnAbort: false
+    enableTool: true
+    debug: true
+  chatluna-selfext:aa0018:
+    enabled: true
+    cacheMinutes: 30
+    maxResults: 8
+    ownerIds:
+      - '2791932480'
+    allowInstall: true
+    persistConfig: true
+    npmProxy: http://127.0.0.1:7890
+    debug: true
   chatluna-affinity:aa0015:
     scopeId: xingyuan
     botSelfIds:
@@ -122,6 +167,9 @@ pkg.description = '测试实例（伪 OneBot）'
 const LOCAL_PLUGINS = [
   'koishi-plugin-chatluna-emotion',
   'koishi-plugin-chatluna-followup',
+  'koishi-plugin-chatluna-proactive',
+  'koishi-plugin-chatluna-scene',
+  'koishi-plugin-chatluna-selfext',
   'koishi-plugin-chatluna-vision',
   'koishi-plugin-qqbot-auth',
 ]

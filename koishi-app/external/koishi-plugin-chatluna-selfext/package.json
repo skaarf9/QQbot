@@ -1,0 +1,21 @@
+{
+  "name": "koishi-plugin-chatluna-selfext",
+  "version": "0.1.0",
+  "description": "R12 自我扩展：搜插件 → 向主人申请 → 安装 → 热挂载",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "private": true,
+  "keywords": ["chatbot", "koishi", "plugin", "chatluna", "selfext", "market"],
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "koishi": {
+    "description": {
+      "zh": "自我扩展：模型能不自己的能力时搜索插件市场，向主人申请，主人确认后安装并热挂载"
+    },
+    "service": {
+      "required": ["http"],
+      "optional": ["chatluna"]
+    }
+  }
+}
