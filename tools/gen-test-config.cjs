@@ -53,6 +53,19 @@ ${adapterBlock}
     debug: true
   chatluna-followup:aa0010:
     debug: true
+  chatluna-long-memory:aa0013:
+    enabledLayers:
+      - Guild
+      - User
+    layerEngines:
+      - layer: Guild
+        engine: Emgas
+      - layer: User
+        engine: Emgas
+    longMemoryExtractModel: deepseek/deepseek/deepseek-v4.1-flash-fast
+    longMemoryExtractInterval: 3
+    longMemoryQueryRewrite: false
+    emgasExtractModel: deepseek/deepseek/deepseek-v4.1-flash-fast
   qqbot-auth:aa0012:
     ownerIds:
       - '2791932480'
@@ -94,3 +107,17 @@ fs.writeFileSync(
   'utf8'
 )
 console.log('已写出 package.json')
+
+// ★ 预设也要同步：测试实例读的是自己的 koishi-test/data/chathub/presets/，
+//   不同步的话改了生产的预设（比如加 {long_memory()}）测试实例根本不知道。
+const presetSrc = path.join(APP, 'data', 'chathub', 'presets')
+const presetDst = path.join(TEST, 'data', 'chathub', 'presets')
+fs.mkdirSync(presetDst, { recursive: true })
+const synced = []
+for (const name of fs.readdirSync(presetSrc)) {
+  if (!name.endsWith('.yml')) continue
+  fs.copyFileSync(path.join(presetSrc, name), path.join(presetDst, name))
+  synced.push(name)
+}
+console.log('已同步预设：' + synced.join(', '))
+

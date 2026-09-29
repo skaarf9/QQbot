@@ -1,0 +1,22 @@
+{
+  "_说明": "R3 长期记忆：越权拦截 / 手动写入 / 检索 / 自动进提示词 / 自动抽取",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["at", "2178517838"], ["text", " 在吗"]] },
+
+    { "wait": 25000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["text", "/chatluna.memory.add 普通人偷偷写一条记忆"]] },
+    { "wait": 4000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["text", "/chatluna.memory.search 大米饭"]] },
+
+    { "wait": 4000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/chatluna.memory.add 主人最喜欢吃大米饭，最讨厌别人说他胖。"]] },
+    { "wait": 8000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/chatluna.memory.search 喜欢吃什么"]] },
+
+    { "wait": 8000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["at", "2178517838"], ["text", " 我最喜欢吃什么来着？"]] },
+
+    { "wait": 35000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["at", "2178517838"], ["text", " 我最喜欢吃什么来着？"]] },
+    { "wait": 35000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["at", "2178517838"], ["text", " 我讨厌别人说我什么？"]] },
+    { "wait": 35000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["at", "2178517838"], ["text", " 记住了，我家的猫叫团子，三岁了。"]] },
+
+    { "wait": 40000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/chatluna.memory.search 主人"]] }
+  ]
+}

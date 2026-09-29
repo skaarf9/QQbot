@@ -1,0 +1,13 @@
+{
+  "_说明": "R3 记忆指令的分级：父指令 2（信任可查）/ 子指令写入删除 3（管理员）",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/权限设置 10005 2"]] },
+    { "wait": 3000, "group": "454444539", "user": "10005", "name": "信任的人", "elements": [["text", "/权限我的"]] },
+    { "wait": 3000, "group": "454444539", "user": "10005", "name": "信任的人", "elements": [["text", "/chatluna.memory.search 主人"]] },
+    { "wait": 8000, "group": "454444539", "user": "10005", "name": "信任的人", "elements": [["text", "/chatluna.memory.add 信任的人偷偷写一条"]] },
+    { "wait": 5000, "group": "454444539", "user": "10005", "name": "信任的人", "elements": [["text", "/chatluna.memory.delete abc"]] },
+    { "wait": 5000, "group": "454444539", "user": "10005", "name": "信任的人", "elements": [["text", "/chatluna.memory.clear"]] }
+  ]
+}

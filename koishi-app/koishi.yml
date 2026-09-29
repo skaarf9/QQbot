@@ -46,6 +46,19 @@ plugins:
     debug: true
   chatluna-followup:fh2k9p:
     debug: true
+  chatluna-long-memory:lm0001:
+    enabledLayers:
+      - Guild
+      - User
+    layerEngines:
+      - layer: Guild
+        engine: Emgas
+      - layer: User
+        engine: Emgas
+    longMemoryExtractModel: deepseek/deepseek/deepseek-v4.1-flash-fast
+    longMemoryExtractInterval: 3
+    longMemoryQueryRewrite: false
+    emgasExtractModel: deepseek/deepseek/deepseek-v4.1-flash-fast
   qqbot-auth:auth01:
     ownerIds:
       - '2791932480'

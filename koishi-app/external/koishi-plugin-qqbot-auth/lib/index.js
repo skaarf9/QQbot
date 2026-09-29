@@ -69,6 +69,19 @@ const OVERRIDES = [
   ['chatluna.use.preset', 3, '切换预设'],
   ['chatluna.voice', 3, '语音合成（花钱）'],
 
+  // ---- 长期记忆（R3 装上 chatluna-long-memory 后才存在）----
+  // 父指令提权到 2，子指令自动继承（有效等级 = 父链上的最大值）；
+  // 写入/删除类再单独提到 3，因为它们会污染或抹掉 bot 的长期记忆。
+  // ★ 这里写「点号全名」而不是 `父>子`：`ctx.command('a.b.c')` 注册出来的
+  //   子指令 `name` 就是完整路径 `a.b.c`（core:1491 点号走 `parent.name + 段`），
+  //   get() 按名字/别名都能查到。`父>子` 只对**斜杠写法**（`emotion/set`）需要，
+  //   那种子指令的 name 只有最后一段。
+  ['chatluna.memory', 2, '长期记忆查看'],
+  ['chatluna.memory.add', 3, '手动写入长期记忆'],
+  ['chatluna.memory.delete', 3, '删除长期记忆'],
+  ['chatluna.memory.clear', 3, '清空长期记忆'],
+  ['chatluna.memory.edit', 3, '编辑长期记忆'],
+
   // ---- 自研插件里的管理向指令 ----
   ['followup', 3, '群聊跟进状态'],
   // ★ 这 4 条的「真名」不是 `emotion.set` —— `ctx.command('emotion/set')` 里的
@@ -180,6 +193,8 @@ module.exports.apply = (ctx, config) => {
     const kids = parent.children ?? []
     return (
       kids.find((c) => c.name === child) ??
+      // `ctx.command('a.b.c')` 的子指令 name 是完整路径，`ctx.command('a/c')` 的只有一段
+      kids.find((c) => c.name === parent.name + '.' + child) ??
       kids.find((c) => Object.hasOwn(c._aliases ?? {}, child))
     )
   }

@@ -3,7 +3,8 @@ prefix:
   - .
 prefixMode: strict
 nickname:
-  - 澶ц偉楸?  - 鏄熸簮
+  - 大肥鱼
+  - 星源
 plugins:
   http:aa0001: {}
   server:aa0002:
@@ -14,8 +15,9 @@ plugins:
   commands:aa0004: {}
   chatluna:aa0005:
     botNames:
-      - 澶ц偉楸?      - 鏄熸簮
-    defaultPreset: 鏄熸簮
+      - 大肥鱼
+      - 星源
+    defaultPreset: 星源
     defaultModel: deepseek/deepseek/deepseek-v4-flash-vision-exp
     autoUpdateConversationModel: true
     messageQueue: true
@@ -37,8 +39,20 @@ plugins:
     debug: true
   chatluna-followup:aa0010:
     debug: true
+  chatluna-long-memory:aa0013:
+    enabledLayers:
+      - Guild
+      - User
+    layerEngines:
+      - layer: Guild
+        engine: Emgas
+      - layer: User
+        engine: Emgas
+    longMemoryExtractModel: deepseek/deepseek/deepseek-v4.1-flash-fast
+    longMemoryExtractInterval: 3
+    longMemoryQueryRewrite: false
+    emgasExtractModel: deepseek/deepseek/deepseek-v4.1-flash-fast
   qqbot-auth:aa0012:
-    '0': null
     ownerIds:
       - '2791932480'
     adminIds:
