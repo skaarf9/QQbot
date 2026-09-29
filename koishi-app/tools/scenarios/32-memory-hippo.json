@@ -1,0 +1,16 @@
+{
+  "_说明": "长期记忆落向量库（写入侧）：HippoRAG 引擎 + 本地嵌入 + luna-vdb —— 记忆应该写进 chatluna_docstore 和 data/chathub/vector_store/luna_vdb/<key>/",
+  "_前置": "chatluna defaultEmbeddings=local/bge-small-zh-v1.5、defaultVectorStore=luna-vdb；long-memory 两层都用 HippoRAG",
+  "_测试配置": "longMemoryExtractInterval=3；guard defaultPolicy=silent（所以先 /开口）",
+  "_注意": "★ 群里的普通消息 ChatLuna 默认不理（allowAtReply），不 @ 的话连对话轮次都不产生，记忆抽取自然也不会跑。所以喂料必须 @。",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 8000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/开口"]] },
+    { "wait": 8000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["at", "2178517838"], ["text", " 我叫王小明，在杭州做后端开发，用的是 Go"]] },
+    { "wait": 18000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["at", "2178517838"], ["text", " 我养了只猫叫豆豆，特别挑食，只吃一种牌子的罐头"]] },
+    { "wait": 18000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["at", "2178517838"], ["text", " 我最喜欢的食物是烤鱼，尤其是重庆那种麻辣口味的"]] },
+    { "wait": 35000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["at", "2178517838"], ["text", " 你还记得我养的猫叫什么、我最爱吃什么吗？"]] },
+    { "wait": 25000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["at", "2178517838"], ["text", " 那我是做什么工作的？在哪个城市？"]] }
+  ]
+}

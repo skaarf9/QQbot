@@ -34,6 +34,16 @@ plugins:
     autoArchiveTimeout: 3600
     autoPurgeArchive: false
     autoPurgeArchiveTimeout: 2592000
+    defaultEmbeddings: local/bge-small-zh-v1.5
+    defaultVectorStore: luna-vdb
+  chatluna-vector-store-service:vs0001:
+    vectorStore:
+      - luna-vdb
+  chatluna-local-embeddings:lce001:
+    enabled: true
+    device: cpu
+    warmup: true
+    debug: false
   chatluna-storage-service:x29qtc:
     storageBackend: local
     serverPath: http://127.0.0.1:5140
@@ -45,7 +55,11 @@ plugins:
           ${{ env.CC_API_KEY }}
         - https://api.commandcode.ai/provider/v1
         - true
-  chatluna-emotion:o5a8hl: {}
+  chatluna-emotion:o5a8hl:
+    halfLife: 60
+    expireMinutes: 180
+    sweepSeconds: 60
+    debug: false
   chatluna-vision:qw3m8z:
     debug: true
   chatluna-followup:fh2k9p:
@@ -73,13 +87,14 @@ plugins:
       - User
     layerEngines:
       - layer: Guild
-        engine: Emgas
+        engine: HippoRAG
       - layer: User
-        engine: Emgas
+        engine: HippoRAG
     longMemoryExtractModel: deepseek/deepseek/deepseek-v4.1-flash-fast
     longMemoryExtractInterval: 3
     longMemoryQueryRewrite: false
-    emgasExtractModel: deepseek/deepseek/deepseek-v4.1-flash-fast
+    hippoExtractModel: deepseek/deepseek/deepseek-v4.1-flash-fast
+    hippoKGPersist: true
   chatluna-sticker:stk001:
     storageDir: data/sticker-library
     judgeThreshold: 3

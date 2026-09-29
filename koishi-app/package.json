@@ -8,6 +8,7 @@
     "start:watch": "node node_modules/koishi/bin.js start --watch"
   },
   "dependencies": {
+    "@huggingface/transformers": "^3.8.1",
     "@koishijs/plugin-admin": "^2.0.0",
     "@koishijs/plugin-commands": "^3.5.5",
     "@koishijs/plugin-config": "^2.8.6",
@@ -29,12 +30,14 @@
     "koishi-plugin-chatluna-emotion": "file:external/koishi-plugin-chatluna-emotion",
     "koishi-plugin-chatluna-followup": "file:external/koishi-plugin-chatluna-followup",
     "koishi-plugin-chatluna-guard": "file:external/koishi-plugin-chatluna-guard",
+    "koishi-plugin-chatluna-local-embeddings": "file:external/koishi-plugin-chatluna-local-embeddings",
     "koishi-plugin-chatluna-long-memory": "^1.4.0",
     "koishi-plugin-chatluna-proactive": "file:external/koishi-plugin-chatluna-proactive",
     "koishi-plugin-chatluna-scene": "file:external/koishi-plugin-chatluna-scene",
     "koishi-plugin-chatluna-selfext": "file:external/koishi-plugin-chatluna-selfext",
     "koishi-plugin-chatluna-sticker": "^1.1.13",
     "koishi-plugin-chatluna-storage-service": "^1.0.7",
+    "koishi-plugin-chatluna-vector-store-service": "^1.4.0",
     "koishi-plugin-chatluna-vision": "file:external/koishi-plugin-chatluna-vision",
     "koishi-plugin-emojiluna": "^1.3.3",
     "koishi-plugin-qqbot-auth": "file:external/koishi-plugin-qqbot-auth",

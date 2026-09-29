@@ -1,0 +1,15 @@
+{
+  "_说明": "长期记忆跨重启（读取侧）：会话历史已经被 tools/clear-test-conversation.cjs 清空、Koishi 也重启过，bot 只能靠向量库里的长期记忆回答。能答出来 = 记忆真的落盘了。",
+  "_前置": "先跑 32-memory-hippo.json 喂事实 -> node --experimental-sqlite tools/clear-test-conversation.cjs -> 再跑这个",
+  "_测试配置": "同 32（HippoRAG + luna-vdb + 本地嵌入）",
+  "_注意": "问的人必须是当初说这些话的那个人（user 10001）：user 层记忆是按人隔离的，主人问是查不到的，这是设计不是 bug。",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 8000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/开口"]] },
+    { "wait": 8000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["at", "2178517838"], ["text", " 你还记得我养的猫叫什么、我最爱吃什么吗？"]] },
+    { "wait": 30000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["at", "2178517838"], ["text", " 那我是做什么工作的？在哪个城市？"]] },
+    { "wait": 30000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["at", "2178517838"], ["text", " 把你知道的关于我的信息都复述一遍"]] },
+    { "wait": 25000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["text", "/chatluna.memory.search 猫"]] }
+  ]
+}

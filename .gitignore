@@ -29,6 +29,9 @@ koishi-app/tools/last-run.log
 koishi-test/koishi.yml.bak-*
 koishi-app/koishi.yml.bak-*
 
+# ---- 本地嵌入模型的下载缓存（transformers.js / ONNX，约 23MB，可重下）----
+models/
+
 # ---- 调研/探针临时目录（抓下来的 registry、npm tarball 等）----
 .scratch/
 

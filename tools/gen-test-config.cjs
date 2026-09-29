@@ -66,6 +66,16 @@ plugins:
     allowQuoteReply: true
     autoArchive: true
     autoArchiveTimeout: 3600
+    defaultEmbeddings: local/bge-small-zh-v1.5
+    defaultVectorStore: luna-vdb
+  chatluna-vector-store-service:aa0020:
+    vectorStore:
+      - luna-vdb
+  chatluna-local-embeddings:aa0021:
+    enabled: true
+    device: cpu
+    warmup: true
+    debug: true
   chatluna-storage-service:aa0006:
     storageBackend: local
     serverPath: http://127.0.0.1:5141
@@ -73,7 +83,11 @@ plugins:
     backendPath: /chatluna-storage
   chatluna-deepseek-adapter:aa0007:
 ${adapterBlock}
-  chatluna-emotion:aa0008: {}
+  chatluna-emotion:aa0008:
+    halfLife: 60
+    expireMinutes: 0.1
+    sweepSeconds: 2
+    debug: true
   chatluna-vision:aa0009:
     debug: true
   chatluna-followup:aa0010:
@@ -86,13 +100,15 @@ ${proactiveBlock}
       - User
     layerEngines:
       - layer: Guild
-        engine: Emgas
+        engine: HippoRAG
       - layer: User
-        engine: Emgas
+        engine: HippoRAG
     longMemoryExtractModel: deepseek/deepseek/deepseek-v4.1-flash-fast
     longMemoryExtractInterval: 3
     longMemoryQueryRewrite: false
-    emgasExtractModel: deepseek/deepseek/deepseek-v4.1-flash-fast
+    hippoExtractModel: deepseek/deepseek/deepseek-v4.1-flash-fast
+    hippoKGPersist: true
+    hippoSimilarityThreshold: 0.35
   chatluna-sticker:aa0014:
     storageDir: data/sticker-library
     judgeThreshold: 1
@@ -181,6 +197,7 @@ const LOCAL_PLUGINS = [
   'koishi-plugin-chatluna-emotion',
   'koishi-plugin-chatluna-followup',
   'koishi-plugin-chatluna-guard',
+  'koishi-plugin-chatluna-local-embeddings',
   'koishi-plugin-chatluna-proactive',
   'koishi-plugin-chatluna-scene',
   'koishi-plugin-chatluna-selfext',

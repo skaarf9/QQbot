@@ -1,0 +1,16 @@
+{
+  "_说明": "R16 情绪过期：情绪不再只靠半衰期慢慢淡，而是由插件逻辑代码按【绝对保质期】强制回收——到期无条件回基线，后台清扫把回到基线的行直接删掉（过期=物理消失）",
+  "_前置": "gen-test-config 里 chatluna-emotion 配了 expireMinutes=0.1（6 秒）、sweepSeconds=2（只为跑得快；生产是 180 分钟 / 60 秒）",
+  "_测试配置": "emotion expireMinutes=0.1 / sweepSeconds=2 / halfLife=60 / debug=true",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 8000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/emotion"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/emotion.set 烦躁 0.9"]] },
+    { "wait": 3000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/emotion"]] },
+    { "wait": 12000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/emotion"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/emotion.set 兴奋 1"]] },
+    { "wait": 4000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/emotion.sweep"]] },
+    { "wait": 10000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/emotion"]] }
+  ]
+}
