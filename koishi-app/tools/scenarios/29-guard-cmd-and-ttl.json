@@ -1,0 +1,16 @@
+{
+  "_说明": "R15 语义修正 + R16 知识过期：被静默的群里【指令照常执行】（屏蔽的只是模型开口），普通聊天一个字都不回；另外验证静默超时的旧会话被归档、下一句从零开始（不再翻出几小时前的话题）",
+  "_前置": "先跑 node --experimental-sqlite --no-warnings tools/seed-old-conversation.cjs（把群会话做旧并塞入「我昨天说我饿了想吃烤鱼」）",
+  "_测试配置": "chatluna autoArchive=true / autoArchiveTimeout=3600；guard defaultPolicy=silent",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 8000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "闭嘴"]] },
+    { "wait": 20000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["at", "2178517838"], ["text", " 今天天气不错啊"]] },
+    { "wait": 15000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["text", "/帮助"]] },
+    { "wait": 15000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/屏蔽状态"]] },
+    { "wait": 12000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["text", "/随便什么不存在的指令"]] },
+    { "wait": 12000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "开口"]] },
+    { "wait": 30000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["at", "2178517838"], ["text", " 你还记得我之前说过我饿了想吃啥吗"]] }
+  ]
+}

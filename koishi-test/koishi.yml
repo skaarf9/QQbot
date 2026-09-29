@@ -23,6 +23,8 @@ plugins:
     messageQueue: true
     messageQueueDelay: 3
     allowQuoteReply: true
+    autoArchive: true
+    autoArchiveTimeout: 3600
   chatluna-storage-service:aa0006:
     storageBackend: local
     serverPath: http://127.0.0.1:5141

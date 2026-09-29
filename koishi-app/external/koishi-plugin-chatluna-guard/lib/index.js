@@ -7,6 +7,15 @@
  *     需要做到我(2791932480)在需要屏蔽的群聊中发送指令后立刻停止该群的回复，
  *     同时，你自己也可以调用脚本停止」
  *
+ * 用户澄清（2026-09-30，★ 这一条改了语义，别改回去）：
+ *   「"/指令"应该由 bot 的逻辑代码处理，如果是模型被屏蔽了理应仍能收到命令，
+ *     只是按照逻辑判断是否要回复」
+ *   ⇒ 屏蔽的是**模型开口**，不是 **bot 的逻辑**。被静默的群里：
+ *     · 真指令（带前缀 / @bot 跟指令名）照常解析执行，回不回由指令自己的逻辑决定
+ *     · 普通聊天、@bot 闲聊、引用闲聊 → 一个字都不回
+ *     · 模型产物（聊天回复、主动发言、跟进）→ 闸门 2/4 拦掉
+ *     · 想连指令一起掐掉：把 allowCommandsWhenMuted 关掉（那就是整群死寂）
+ *
  * ---
  * ★ 为什么要"立刻"就必须是同步判定
  *
@@ -15,7 +24,7 @@
  * 不存在"等一个轮询周期"。脚本直写库的兜底路径最慢 refreshSeconds 秒。
  *
  * ---
- * ★ 三道闸门（缺一道都有漏网路径，这是实测出来的）
+ * ★ 四道闸门（缺一道都有漏网路径，这是实测出来的）
  *
  * 1. **全局中间件（prepend）** —— 拦"用户发进来的消息"。
  *    Koishi 的中间件只有**一个全局数组**（Processor._hooks，core:730/737），
@@ -28,10 +37,16 @@
  *    **不走** Koishi 中间件，闸门 1 对它无效。链上返回 `STOP`(1) 会让整轮
  *    `_runMiddleware` 直接 return false（chains/index.cjs:178-190），一个字都不会发。
  *    `ChainMiddlewareRunStatus = { SKIPPED:0, STOP:1, CONTINUE:2 }`（chains:883-887）。
+ *    ★ 链闸门只拦得住"还没开始的回合"。
  *
- * 3. **指令自己的 authority** —— 拦"授权"。闸门 1 对控制词是**放行**的
- *    （否则被屏蔽的群里连"开口"都发不进去），真正的权限判定交给 Koishi 的
- *    `authority:N`（qqbot-auth 会在 attach-user 里把主人抬到 4）。
+ * 3. **`before-send`（发送口）** —— 拦"已经在生成中"的那一轮。
+ *    用户喊闭嘴时上一个回合可能正跑着（模型要 10~20 秒），那条回复会在闭嘴**之后**
+ *    才冒出来（剧本 27 实测发生过）。`before-send` 是 `app.serial` 调的勾子
+ *    （@satorijs/core:752），返回非空即取消发送；开关操作与指令自己的回复靠中间件
+ *    打在 session 上的 `__guardControl` 标记放行。
+ *
+ * 4. **指令自己的 authority** —— 拦"授权"。闸门 1 对控制词**和真指令**都是放行的，
+ *    权限判定交给 Koishi 的 `authority:N`（qqbot-auth 在 attach-user 里把主人抬到 4）。
  *
  * ---
  * ★ 为什么"裸词兜底"要放在 next() 之后
@@ -113,6 +128,13 @@ const Config = Schema.intersect([
     bareKeywords: Schema.boolean()
       .default(true)
       .description('允许不带前缀、不 @ 直接打「开口 / 闭嘴」（推荐开，被屏蔽时最省事）'),
+    allowCommandsWhenMuted: Schema.boolean()
+      .default(true)
+      .description(
+        '被静默的群里，**指令**是否照常执行。开着 = 屏蔽的只是"模型开口"，' +
+          'bot 的逻辑代码（开关、查询、管理指令）照常工作，是否回复由指令自己的逻辑决定；' +
+          '关掉 = 连指令都不解析，整群彻底死寂'
+      ),
     confirmSeconds: Schema.natural()
       .default(5)
       .description('同一个群开关提示的冷却（秒），防止连点刷屏'),
@@ -465,32 +487,57 @@ function apply(ctx, config) {
 
   // ---------------------------------------------------------- 闸门 1：全局中间件
 
+  /** 指令前缀（顶层 prefix 配置，可能是数组也可能被写成字符串） */
+  function commandPrefixes() {
+    const p = ctx.root?.config?.prefix
+    if (Array.isArray(p)) return p.filter(Boolean)
+    if (typeof p === 'string' && p) return [...p]
+    return []
+  }
+
+  /** 这条消息 @ 了 bot 吗 */
+  function hasAtSelf(session) {
+    return !!session.elements?.some(
+      (el) => el?.type === 'at' && String(el?.attrs?.id) === String(session.selfId)
+    )
+  }
+
+  /** 去掉前缀 / 去掉 @ 之后的"用户实际敲的东西" */
+  function textOf(session) {
+    const raw = String(session.content ?? '').trim()
+    if (!raw) return { text: '', bare: false, prefixed: false }
+    const hit = commandPrefixes().find((x) => raw.startsWith(x))
+    if (hit) return { text: raw.slice(hit.length).trim(), bare: false, prefixed: true }
+    if (hasAtSelf(session)) {
+      const s = String(session.stripped?.content ?? '').trim()
+      // stripped 有时会把 @ 保留成 <at .../>，兜底再洗一遍
+      return { text: s.replace(/<at[^>]*>/g, '').trim(), bare: false, prefixed: false }
+    }
+    return { text: raw, bare: true, prefixed: false }
+  }
+
+  /**
+   * 这条消息是不是**真实存在的指令**？是就返回指令名（给日志用），不是返回 null。
+   *
+   * ★ 为什么必须查一次指令表而不是"看到前缀就算"：
+   *   被静默的群里，用户随手打的 `/随便什么` 不该让 Koishi 冒出"指令不存在"之类的回执
+   *   —— 静默就是静默，只有真指令才放行。
+   */
+  function commandName(session) {
+    const { text, prefixed } = textOf(session)
+    if (!text) return null
+    if (!prefixed && !hasAtSelf(session)) return null // 裸词不当指令（群里本来也要前缀才解析）
+    const word = text.split(/\s+/)[0]?.toLowerCase()
+    if (!word) return null
+    const cmd = ctx.$commander?.get?.(word)
+    return cmd ? cmd.name || word : null
+  }
+
   /** 控制词识别。返回 { kind, bare } —— bare 表示"没前缀也没 @"（走 next() 之后的兜底） */
   function classify(session) {
-    const raw = String(session.content ?? '').trim()
-    if (!raw) return null
-
-    const prefixes = []
-    const p = ctx.root?.config?.prefix
-    if (Array.isArray(p)) prefixes.push(...p)
-    else if (typeof p === 'string' && p) prefixes.push(...p.split(''))
-
-    let text = null
-    let bare = false
-    const hit = prefixes.find((x) => x && raw.startsWith(x))
-    if (hit) {
-      text = raw.slice(hit.length).trim()
-    } else {
-      const atSelf = !!session.elements?.some(
-        (el) => el?.type === 'at' && String(el?.attrs?.id) === String(session.selfId)
-      )
-      if (atSelf) text = String(session.stripped?.content ?? '').trim()
-      else if (cfg.bareKeywords) {
-        text = raw
-        bare = true
-      }
-    }
+    const { text, bare } = textOf(session)
     if (!text) return null
+    if (bare && !cfg.bareKeywords) return null
 
     const word = text.split(/\s+/)[0].toLowerCase()
     if (!CONTROL_WORDS.has(word)) return null
@@ -587,24 +634,48 @@ function apply(ctx, config) {
         return next()
       }
 
-      // ---- 被屏蔽：除了控制词，一个字都不回 ----
-      if (!cls) {
-        log('静默丢弃：%s｜%s', describe(session), String(session.content ?? '').slice(0, 40))
-        return
+      // ---- 被屏蔽：模型不许开口，但 bot 的逻辑（指令）照常工作 ----
+      //
+      // ★ 用户 2026-09-30 明确要求："指令应该由 bot 的逻辑代码处理，
+      //   如果是模型被屏蔽了理应仍能收到命令，只是按照逻辑判断是否要回复"。
+      //   所以这里的顺序是：控制词 → 真指令 → 其余一律丢弃。
+      //   指令走到指令系统里，回复与否由**每条指令自己的逻辑**决定；
+      //   而被屏蔽的只是"模型开口"（闸门 2 链 + 闸门 4 发送口会拦住模型产物）。
+
+      // 1) 控制词
+      if (cls) {
+        // 打标：这条会话是"开关操作"，它的回复（含指令的返回值）必须放出去，见闸门 4。
+        // 标记加在 session 对象上，因为 MessageEncoder 用的就是同一个对象。
+        session.__guardControl = cls.kind
+        if (cls.bare) {
+          log('静默中收到裸词：%s｜%s', describe(session), cls.kind)
+          const out = await next()
+          await handleBare(session, cls.kind)
+          return out
+        }
+        // 带前缀的控制词放行给指令系统 —— 权限判定在 attach 之后，非授权者会看到
+        // 一句"权限不足"。这是有意的取舍：控制词本身是显式操作，不是"意料之外的输出"。
+        log('静默中放行控制词（交给指令系统判定权限）：%s｜%s', describe(session), cls.kind)
+        return next()
       }
-      // 打标：这条会话是"开关操作"，它的回复（含指令的返回值）必须放出去，
-      // 见闸门 4。标记加在 session 对象上，因为 MessageEncoder 用的就是同一个对象。
-      session.__guardControl = cls.kind
-      if (cls.bare) {
-        log('静默中收到裸词：%s｜%s', describe(session), cls.kind)
-        const out = await next()
-        await handleBare(session, cls.kind)
-        return out
+
+      // 2) 真指令（带前缀 / @bot 跟上指令名）—— 逻辑照跑
+      if (cfg.allowCommandsWhenMuted) {
+        const cmdName = commandName(session)
+        if (cmdName) {
+          session.__guardControl = `command:${cmdName}`
+          logger.info(
+            '静默中放行指令 %s（%s）：屏蔽只拦模型开口，逻辑照常执行',
+            cmdName,
+            describe(session)
+          )
+          return next()
+        }
       }
-      // 带前缀的控制词放行给指令系统 —— 权限判定在 attach 之后，非授权者会看到
-      // 一句"权限不足"。这是有意的取舍：控制词本身是显式操作，不是"意料之外的输出"。
-      log('静默中放行控制词（交给指令系统判定权限）：%s｜%s', describe(session), cls.kind)
-      return next()
+
+      // 3) 其余：彻底静默
+      log('静默丢弃：%s｜%s', describe(session), String(session.content ?? '').slice(0, 40))
+      return
     } catch (e) {
       logger.warn('屏蔽判定出错（放行）：%s', e.message)
       return next()

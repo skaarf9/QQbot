@@ -30,6 +30,10 @@ plugins:
     messageQueue: true
     messageQueueDelay: 3
     allowQuoteReply: true
+    autoArchive: true
+    autoArchiveTimeout: 3600
+    autoPurgeArchive: false
+    autoPurgeArchiveTimeout: 2592000
   chatluna-storage-service:x29qtc:
     storageBackend: local
     serverPath: http://127.0.0.1:5140
