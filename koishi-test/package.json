@@ -1,0 +1,33 @@
+{
+  "name": "qqbot-koishi-test",
+  "private": true,
+  "version": "0.1.0",
+  "description": "测试实例（伪 OneBot）",
+  "scripts": {
+    "start": "node node_modules/koishi/bin.js start",
+    "start:watch": "node node_modules/koishi/bin.js start --watch"
+  },
+  "dependencies": {
+    "@koishijs/plugin-admin": "^2.0.0",
+    "@koishijs/plugin-commands": "^3.5.5",
+    "@koishijs/plugin-config": "^2.8.6",
+    "@koishijs/plugin-console": "^5.30.11",
+    "@koishijs/plugin-database-sqlite": "^4.7.0",
+    "@koishijs/plugin-echo": "^2.2.5",
+    "@koishijs/plugin-help": "^2.4.6",
+    "@koishijs/plugin-http": "^0.6.3",
+    "@koishijs/plugin-insight": "^3.5.2",
+    "@koishijs/plugin-market": "^2.11.11",
+    "@koishijs/plugin-proxy-agent": "^0.3.3",
+    "@koishijs/plugin-server": "^3.2.9",
+    "@koishijs/plugin-status": "^7.4.10",
+    "koishi": "^4.18.11",
+    "koishi-plugin-adapter-onebot": "^6.9.4",
+    "koishi-plugin-chatluna": "^1.4.0",
+    "koishi-plugin-chatluna-deepseek-adapter": "^1.4.1",
+    "koishi-plugin-chatluna-emotion": "file:external/koishi-plugin-chatluna-emotion",
+    "koishi-plugin-chatluna-followup": "file:external/koishi-plugin-chatluna-followup",
+    "koishi-plugin-chatluna-storage-service": "^1.0.7",
+    "koishi-plugin-chatluna-vision": "file:external/koishi-plugin-chatluna-vision"
+  }
+}

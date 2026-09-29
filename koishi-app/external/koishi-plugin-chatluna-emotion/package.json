@@ -1,0 +1,35 @@
+{
+  "name": "koishi-plugin-chatluna-emotion",
+  "version": "0.1.0",
+  "description": "ChatLuna 情绪系统：bot 根据自己的对话内容动态调整情绪，并向预设注入 {emotion()} 变量",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "private": true,
+  "keywords": [
+    "chatbot",
+    "koishi",
+    "plugin",
+    "chatluna",
+    "emotion"
+  ],
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "dependencies": {
+    "@langchain/core": "^0.3.0",
+    "zod": "^3.25.0"
+  },
+  "koishi": {
+    "description": {
+      "zh": "给 ChatLuna 加上情绪：情绪随对话变化，随时间衰减回基线，并通过 {emotion()} 注入预设"
+    },
+    "service": {
+      "required": [
+        "database"
+      ],
+      "optional": [
+        "chatluna"
+      ]
+    }
+  }
+}

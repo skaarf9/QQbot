@@ -1,0 +1,20 @@
+{
+  "name": "koishi-plugin-chatluna-followup",
+  "version": "0.1.0",
+  "description": "群聊跟进机制：用户叫过 bot 之后，短时间内继续说的话也算在跟 bot 对话，会尝试回复",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "private": true,
+  "keywords": ["chatbot", "koishi", "plugin", "chatluna", "followup"],
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "koishi": {
+    "description": {
+      "zh": "群聊跟进：@过 bot 之后的一小段时间内，同一用户继续发的消息也会触发回复尝试"
+    },
+    "service": {
+      "optional": ["chatluna"]
+    }
+  }
+}

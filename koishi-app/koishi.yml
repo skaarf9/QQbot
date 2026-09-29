@@ -1,0 +1,55 @@
+prefix:
+  - /
+  - .
+prefixMode: strict
+nickname:
+  - 大肥鱼
+  - 星源
+plugins:
+  proxy-agent:tju9bj: {}
+  http:bvywwr: {}
+  server:meey6h:
+    host: 127.0.0.1
+    port: 5140
+  console:pjq8ox: {}
+  config:o1tx59: {}
+  market:ht45i0:
+    search:
+      endpoint: https://koishi-registry.yumetsuki.moe/index.json
+  database-sqlite:w4sj7r:
+    path: data/koishi.db
+  commands:4v63gn: {}
+  admin:6lt8ix: {}
+  chatluna:03llpk:
+    botNames:
+      - 大肥鱼
+      - 星源
+    defaultPreset: 星源
+    defaultModel: deepseek/deepseek/deepseek-v4-flash-vision-exp
+    autoUpdateConversationModel: true
+    messageQueue: true
+    messageQueueDelay: 3
+    allowQuoteReply: true
+  chatluna-storage-service:x29qtc:
+    storageBackend: local
+    serverPath: http://127.0.0.1:5140
+    storagePath: ./data/chatluna-storage
+    backendPath: /chatluna-storage
+  chatluna-deepseek-adapter:iuy94m:
+    apiKeys:
+      - - >-
+          ${{ env.CC_API_KEY }}
+        - https://api.commandcode.ai/provider/v1
+        - true
+  chatluna-emotion:o5a8hl: {}
+  chatluna-vision:qw3m8z:
+    debug: true
+  chatluna-followup:fh2k9p:
+    debug: true
+  adapter-onebot:k9mmua:
+    protocol: ws
+    endpoint: ws://127.0.0.1:3001
+    token: aa07bce1e30a4355b8fc36c44c9175e0
+    selfId: '2178517838'
+  help:3nsrbd: {}
+  echo:fyrru2: {}

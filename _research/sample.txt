@@ -1,0 +1,3 @@
+﻿KEY: $meta
+VALUE TYPE: System.Management.Automation.PSCustomObject
+VALUE PROPS: schema_version, name, version, homepage, repository, description, updated_at

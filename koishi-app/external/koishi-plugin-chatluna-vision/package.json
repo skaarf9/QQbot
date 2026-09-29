@@ -1,0 +1,24 @@
+{
+  "name": "koishi-plugin-chatluna-vision",
+  "version": "0.1.0",
+  "description": "ChatLuna 图片理解策略：私聊/@bot 时解析图片为文字，群聊默认忽略未解析图片，已解析的走数据库缓存",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "private": true,
+  "keywords": ["chatbot", "koishi", "plugin", "chatluna", "vision", "image"],
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "dependencies": {
+    "@langchain/core": "^0.3.0"
+  },
+  "koishi": {
+    "description": {
+      "zh": "图片策略：私聊必解析、群里默认装看不见、@bot 才解析、已解析的走缓存白嫖"
+    },
+    "service": {
+      "required": ["database", "http"],
+      "optional": ["chatluna"]
+    }
+  }
+}

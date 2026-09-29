@@ -1,0 +1,46 @@
+prefix:
+  - /
+  - .
+prefixMode: strict
+nickname:
+  - 大肥鱼
+  - 星源
+plugins:
+  http:aa0001: {}
+  server:aa0002:
+    host: 127.0.0.1
+    port: 5141
+  database-sqlite:aa0003:
+    path: data/test.db
+  commands:aa0004: {}
+  chatluna:aa0005:
+    botNames:
+      - 大肥鱼
+      - 星源
+    defaultPreset: 星源
+    defaultModel: deepseek/deepseek/deepseek-v4-flash-vision-exp
+    autoUpdateConversationModel: true
+    messageQueue: true
+    messageQueueDelay: 3
+    allowQuoteReply: true
+  chatluna-storage-service:aa0006:
+    storageBackend: local
+    serverPath: http://127.0.0.1:5141
+    storagePath: ./data/chatluna-storage
+    backendPath: /chatluna-storage
+  chatluna-deepseek-adapter:aa0007:
+    apiKeys:
+      - - >-
+          ${{ env.CC_API_KEY }}
+        - https://api.commandcode.ai/provider/v1
+        - true
+  chatluna-emotion:aa0008: {}
+  chatluna-vision:aa0009:
+    debug: true
+  chatluna-followup:aa0010:
+    debug: true
+  adapter-onebot:aa0011:
+    protocol: ws
+    endpoint: ws://127.0.0.1:3002
+    token: ''
+    selfId: '2178517838'

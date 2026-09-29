@@ -1,0 +1,30 @@
+# ---- deps ----
+node_modules/
+package-lock.json.bak
+
+# ---- runtime state (chat history db, file storage, caches) ----
+koishi-app/data/
+koishi-test/data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# ---- secrets ----
+key.txt
+*.secret
+.env
+.env.*
+
+# ---- logs & temp ----
+*.log
+logs/
+temp/
+*.tmp
+
+# ---- editor / OS ----
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+~$*
