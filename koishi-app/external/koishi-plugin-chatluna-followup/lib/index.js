@@ -60,11 +60,83 @@ const Config = Schema.intersect([
     skipWhenAtOthers: Schema.boolean()
       .default(true)
       .description('消息里 @ 了别人 → 判定为在跟别人说话，不接'),
+    unlistedGroupPolicy: Schema.union([
+      Schema.const('inherit').description('沿用上面的全局参数'),
+      Schema.const('off').description('不在列表里的群一律不跟进'),
+    ])
+      .default('inherit')
+      .description(
+        '★ 没写进下面「按群配置」的群怎么办。真群建议用 off —— ' +
+          '活跃大群里每人各自开一个跟进窗口，叠加起来就是刷屏'
+      ),
+    groupMaxPerWindow: Schema.natural()
+      .default(0)
+      .description(
+        '★ 整群熔断：同一个群在下面这个时间窗内最多自动接多少条（0 = 关）。' +
+          '上面那些上限都是「按人」算的，30 人活跃群乘起来照样能刷屏 ——' +
+          '2026-10-02 真群实测 2 分半发了 20 条、随后被腾讯限流（retcode 1200），' +
+          '就是缺这一道整群闸。'
+      ),
+    groupWindowSeconds: Schema.natural()
+      .default(60)
+      .description('整群熔断的时间窗（秒）'),
+  }),
+  Schema.object({
+    groups: Schema.array(
+      Schema.object({
+        guildId: Schema.string().required().description('群号'),
+        enabled: Schema.boolean()
+          .default(true)
+          .description('这个群要不要跟进。关掉 = 只回应 @，不自动接话'),
+        windowSeconds: Schema.natural()
+          .default(0)
+          .description('空闲时限（秒）。0 = 沿用全局'),
+        maxSeconds: Schema.natural()
+          .default(0)
+          .description('硬上限（秒）。0 = 沿用全局'),
+        maxConsecutive: Schema.number()
+          .default(-1)
+          .description('最多自动接多少条。-1 = 沿用全局'),
+      })
+    )
+      .role('list')
+      .description(
+        '★ 按群覆盖参数。2026-10-02 加：真群「空弓玄天下第一！」里 ' +
+          'followup 会在 600 秒内按人各接 20 条，几十条消息叠起来直接把 bot 刷成复读机，' +
+          '还被腾讯限流（retcode 1200）—— 所以真群要单独压住'
+      ),
   }),
   Schema.object({
     debug: Schema.boolean().default(false).description('打印每次判定'),
   }),
 ])
+
+/**
+ * 解析某个群实际生效的参数。
+ * 返回 null = 这个群不跟进（直接 SKIPPED）。
+ */
+function resolveProfile(config, profiles, guildId) {
+  const globalProfile = {
+    windowSeconds: config.windowSeconds,
+    maxSeconds: config.maxSeconds,
+    maxConsecutive: config.maxConsecutive,
+  }
+  const g = guildId == null ? null : profiles.get(String(guildId))
+  if (!g) {
+    return config.unlistedGroupPolicy === 'off' ? null : globalProfile
+  }
+  if (g.enabled === false) return null
+  return {
+    windowSeconds:
+      Number(g.windowSeconds) > 0 ? Number(g.windowSeconds) : globalProfile.windowSeconds,
+    maxSeconds:
+      Number(g.maxSeconds) > 0 ? Number(g.maxSeconds) : globalProfile.maxSeconds,
+    maxConsecutive:
+      Number(g.maxConsecutive) >= 0
+        ? Number(g.maxConsecutive)
+        : globalProfile.maxConsecutive,
+  }
+}
 
 /** 这条消息是不是在跟 bot 说话（@ / 开头叫昵称 / 引用 bot 的消息） */
 function isTalkingToBot(session) {
@@ -102,6 +174,31 @@ function apply(ctx, config) {
   const state = new Map()
   const keyOf = (session) =>
     `${session.platform}:${session.channelId}:${session.userId}`
+
+  /** guildId -> 该群的覆盖配置 */
+  const profiles = new Map()
+  for (const g of config.groups || []) {
+    if (g?.guildId) profiles.set(String(g.guildId), g)
+  }
+
+  /**
+   * 整群熔断计数器：guildId -> { count, resetAt }
+   * ★ 按人的上限挡不住"很多人各自说一句"，必须有整群口径的闸。
+   */
+  const burst = new Map()
+  function allowByBurst(guildId, now) {
+    const limit = Number(config.groupMaxPerWindow) || 0
+    if (limit <= 0) return true
+    const winMs = Math.max(1, Number(config.groupWindowSeconds) || 60) * 1000
+    let b = burst.get(guildId)
+    if (!b || now >= b.resetAt) {
+      b = { count: 0, resetAt: now + winMs }
+      burst.set(guildId, b)
+    }
+    if (b.count >= limit) return false
+    b.count += 1
+    return true
+  }
 
   // 顺手清掉过期条目，别让 Map 无限长
   function sweep(now) {
@@ -168,18 +265,26 @@ function apply(ctx, config) {
             const key = keyOf(session)
             sweep(now)
 
+            // ---- 0) 这个群实际生效的参数（null = 该群不跟进）----
+            const profile = resolveProfile(
+              config,
+              profiles,
+              session.guildId ?? session.channelId
+            )
+            if (!profile) return SKIPPED
+
             // ---- 1) 这条就是"叫 bot"：记录/刷新窗口 ----
             if (isTalkingToBot(session)) {
-              const windowMs = config.windowSeconds * 1000
+              const windowMs = profile.windowSeconds * 1000
               state.set(key, {
                 idleUntil: now + windowMs,
-                hardUntil: now + config.maxSeconds * 1000,
+                hardUntil: now + profile.maxSeconds * 1000,
                 count: 0,
               })
               log(
                 '%s 叫了 bot，开启 %ds 跟进窗口',
                 session.userId,
-                config.windowSeconds
+                profile.windowSeconds
               )
               return SKIPPED
             }
@@ -197,7 +302,7 @@ function apply(ctx, config) {
               log('%s 空闲超时，跟进结束', session.userId)
               return SKIPPED
             }
-            if (st.count >= config.maxConsecutive) {
+            if (st.count >= profile.maxConsecutive) {
               state.delete(key)
               log('%s 连续接了 %d 条，停手', session.userId, st.count)
               return SKIPPED
@@ -209,13 +314,26 @@ function apply(ctx, config) {
             // 命令有自己的处理路径，不掺和
             if (context.command != null) return SKIPPED
 
+            // ---- 2.5) 整群熔断：按人算完还要看整群总额 ----
+            const gid = String(session.guildId ?? session.channelId ?? '')
+            if (!allowByBurst(gid, now)) {
+              log(
+                '群 %s 触发整群熔断（%ds 内最多 %d 条），跳过 %s',
+                gid,
+                config.groupWindowSeconds,
+                config.groupMaxPerWindow,
+                session.userId
+              )
+              return SKIPPED
+            }
+
             // ---- 3) 注入"@了 bot"，让 allow_reply 放行 ----
             const els = session.elements ? Array.from(session.elements) : []
             session.elements = [h('at', { id: session.selfId }), ...els]
             session._stripped = undefined
 
             st.count += 1
-            st.idleUntil = now + config.windowSeconds * 1000
+            st.idleUntil = now + profile.windowSeconds * 1000
             log(
               '%s 跟进触发（第 %d 条，还剩 %ds 硬上限）',
               session.userId,
@@ -233,11 +351,16 @@ function apply(ctx, config) {
       .before('allow_reply')
 
     logger.info(
-      '群聊跟进机制已挂载（空闲 %ds / 硬上限 %ds / 最多 %d 条 / %s）',
+      '群聊跟进机制已挂载（空闲 %ds / 硬上限 %ds / 最多 %d 条 / %s；按群覆盖 %d 个，未列出的群=%s；整群熔断 %s）',
       config.windowSeconds,
       config.maxSeconds,
       config.maxConsecutive,
-      config.groupsOnly ? '仅群聊' : '群聊+私聊'
+      config.groupsOnly ? '仅群聊' : '群聊+私聊',
+      profiles.size,
+      config.unlistedGroupPolicy === 'off' ? '不跟进' : '沿用全局',
+      Number(config.groupMaxPerWindow) > 0
+        ? `${config.groupWindowSeconds}s 内 ${config.groupMaxPerWindow} 条`
+        : '关'
     )
   })
 

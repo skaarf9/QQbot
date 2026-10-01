@@ -92,6 +92,19 @@ ${adapterBlock}
     debug: true
   chatluna-followup:aa0010:
     debug: true
+    windowSeconds: 120
+    maxSeconds: 600
+    maxConsecutive: 20
+    groupMaxPerWindow: 1
+    groupWindowSeconds: 600
+    groups:
+      - guildId: '454444539'
+        enabled: true
+        windowSeconds: 45
+        maxSeconds: 90
+        maxConsecutive: 1
+      - guildId: '999000111'
+        enabled: false
   chatluna-proactive:aa0016:
 ${proactiveBlock}
   chatluna-long-memory:aa0013:
