@@ -4,7 +4,6 @@ prefix:
 prefixMode: strict
 nickname:
   - 大肥鱼
-  - 星源
 plugins:
   http:aa0001: {}
   server:aa0002:
@@ -16,9 +15,8 @@ plugins:
   chatluna:aa0005:
     botNames:
       - 大肥鱼
-      - 星源
-    defaultPreset: 星源
-    defaultModel: deepseek/deepseek/deepseek-v4-flash-vision-exp
+    defaultPreset: default-persona
+    defaultModel: cc/q.dialogue
     autoUpdateConversationModel: true
     messageQueue: true
     messageQueueDelay: 3
@@ -42,8 +40,7 @@ plugins:
     backendPath: /chatluna-storage
   chatluna-deepseek-adapter:aa0007:
     apiKeys:
-      - - >-
-          ${{ env.CC_API_KEY }}
+      - - ${{ env.CC_API_KEY }}
         - https://api.commandcode.ai/provider/v1
         - true
   chatluna-emotion:aa0008:
@@ -53,19 +50,53 @@ plugins:
     debug: true
   chatluna-vision:aa0009:
     debug: true
+    selfAware: true
+    selfCompare: text
+  chatluna-persona:aa0024:
+    selfCardPath: data/persona/self.yml
+    reloadSeconds: 1
+    avatarSelfId: '2178517838'
+    avatarRefreshDays: 7
+    debug: true
+  chatluna-routine:aa0025:
+    enabled: true
+    tickSeconds: 30
+    catchUpMinutes: 20
+    variableName: routine
+    announceGroups: []
+    blocks:
+      - id: sleep
+        label: 睡觉
+        kind: sleep
+        start: '23:30'
+        end: '08:00'
+        enterText: 我先去睡了……别吵我。
+        exitText: 我睡醒了。
+        jitterMinutes: 25
+        quiet: true
+        announce: false
+      - id: lunch
+        label: 午饭
+        kind: meal
+        start: '12:00'
+        end: '12:40'
+        enterText: 我先去吃饭啦！这个你测一下~
+        exitText: 吃完了，回来啦。
+        jitterMinutes: 15
+        quiet: false
+        announce: false
+    debug: true
   chatluna-followup:aa0010:
     debug: true
     windowSeconds: 120
     maxSeconds: 600
     maxConsecutive: 20
-    groupMaxPerWindow: 1
-    groupWindowSeconds: 600
     groups:
       - guildId: '454444539'
         enabled: true
-        windowSeconds: 45
-        maxSeconds: 90
-        maxConsecutive: 1
+        windowSeconds: 60
+        maxSeconds: 300
+        maxConsecutive: 5
       - guildId: '999000111'
         enabled: false
   chatluna-proactive:aa0016:
@@ -76,6 +107,9 @@ plugins:
     failureCooldownSeconds: 30
     historyLimit: 20
     maxImages: 3
+    judgeEnabled: false
+    judgeTimeoutMs: 30000
+    judgeSkipSeconds: 10
     groups:
       - guildId: '454444539'
         enableActivity: true
@@ -103,7 +137,7 @@ plugins:
   chatluna-sticker:aa0014:
     storageDir: data/sticker-library
     judgeThreshold: 1
-    judgeModel: deepseek/deepseek/deepseek-v4-flash-vision-exp
+    judgeModel: deepseek/deepseek/deepseek-v4.1-flash
     phashThreshold: 5
     maxSendableImages: 2000
     occurrenceTtlDays: 10
@@ -117,6 +151,33 @@ plugins:
     maxMinutes: 60
     notifyOnAbort: false
     enableTool: true
+    debug: true
+  chatluna-episode:aa0032:
+    enabled: true
+    storeScopes: allow
+    retainHours: 6
+    maxRowsPerScope: 300
+    variableName: episode
+    windowMessages: 6
+    windowMinutes: 240
+    focusWindowMessages: 60
+    focusWindowMinutes: 1440
+    quoteHint: true
+    summaryEnabled: true
+    summaryModel: cc/q.memory
+    summaryTriggerMessages: 6
+    summaryMaxChars: 400
+    summaryTimeoutMs: 60000
+    enableRecallTool: true
+    recallDefaultHours: 24
+    recallMaxLimit: 60
+    enableFocus: true
+    focusVariableName: focus
+    focusMaxMinutes: 60
+    focusIdleMinutes: 30
+    focusLedgerTools: true
+    focusNotify: false
+    sweepSeconds: 15
     debug: true
   chatluna-selfext:aa0018:
     enabled: true
@@ -139,8 +200,18 @@ plugins:
     confirmSeconds: 0
     refreshSeconds: 5
     debug: true
+    outboundEnabled: true
+    outboundBurst: 3
+    outboundPerMinute: 12
+    outboundMinGapSeconds: 2
+    outboundGapMaxWaitSeconds: 30
+    outboundExemptCommands: false
+    outboundGroups:
+      - guildId: '777000222'
+        burst: 1
+        perMinute: 1
   chatluna-affinity:aa0015:
-    scopeId: xingyuan
+    scopeId: affinity
     botSelfIds:
       - '2178517838'
     variableSettings:
@@ -155,6 +226,51 @@ plugins:
       enableRelationshipXmlToolCall: false
       enableUserAliasXmlToolCall: false
     debugLogging: true
+  chatluna-affinity-bridge:aa0022:
+    enabled: true
+    provideShim: true
+    minIntervalMs: 2000
+    debug: true
+  chatluna-models:aa0023:
+    enabled: true
+    pageSize: 10
+    showGroupChain: true
+    stagesCommand: true
+    debug: true
+  chatluna-poke:pk0001:
+    enabled: true
+    pokeBack: true
+    privateEnabled: true
+    groupEnabled: true
+    callModel: true
+    deliverPrivate: false
+    deliverGroup: false
+    persist: false
+    modelTimeoutSeconds: 60
+    userCooldownSeconds: 30
+    cooldownSeconds: 5
+    mergeWindowSeconds: 3
+    quietDefaultText: true
+    blockToolboxPokeTool: true
+    debug: true
+  chatluna-mcp-client:mcp002:
+    servers: |
+      {
+        "mcpServers": {
+          "websearch": {
+            "command": "node",
+            "args": ["D:/deepseek/QQbot/koishi-app/mcp/websearch-server.cjs"],
+            "cwd": "D:/deepseek/QQbot/koishi-app",
+            "env": {
+              "HTTP_PROXY": "http://127.0.0.1:7890",
+              "HTTPS_PROXY": "http://127.0.0.1:7890",
+              "ALL_PROXY": "http://127.0.0.1:7890",
+              "NO_PROXY": "localhost,127.0.0.1,::1",
+              "NODE_PATH": "D:/deepseek/QQbot/koishi-app/node_modules"
+            }
+          }
+        }
+      }
   qqbot-auth:aa0012:
     ownerIds:
       - '2791932480'
@@ -163,11 +279,327 @@ plugins:
     blockedIds:
       - '10004'
     debug: true
-    affinityScopeId: xingyuan
+    affinityScopeId: affinity
     affinityPromoteAt: 51
     affinityDemoteAt: 40
+  chatluna-toolbox:tbx001:
+    oneBotProtocol: napcat
+    enabledNativeTools:
+      - poke
+      - searchGroupMember
+      - setMsgEmoji
+    userInfo:
+      variableName: userInfo
+      items:
+        - nickname
+        - userId
+        - role
+        - level
+        - title
+        - joinTime
+        - lastSentTime
+    botInfo:
+      variableName: botInfo
+      items:
+        - nickname
+        - userId
+        - role
+        - title
+    groupInfo:
+      variableName: groupInfo
+      items:
+        - groupName
+        - groupId
+        - memberCount
+    random:
+      variableName: random
+      min: 0
+      max: 100
+    debugLogging: true
+  chatluna-variable-extension:vxe001:
+    lunar: true
+    latestMessage: true
+    latestMessageGroups:
+      - '777000111'
+      - '454444539'
+  chatluna-replacer:rpl001:
+    enabled: true
+    skipCommands: true
+    skipGuardControl: true
+    dropWhenEmpty: true
+    maxRules: 200
+    hitFlushSeconds: 5
+    debug: true
+  puppeteer:ppt001:
+    headless: true
+  chatluna-webpreview:wpv001:
+    enabled: true
+    toolEnabled: true
+    groups: []
+    toolCooldownSeconds: 20
+    autoEnabled: false
+    autoGroups: []
+    autoCooldownSeconds: 60
+    viewportWidth: 1024
+    viewportHeight: 768
+    deviceScaleFactor: 1
+    mode: viewport
+    maxCaptureHeight: 3000
+    maxBytes: 700000
+    jpegQuality: 82
+    allowJavaScript: true
+    allowPrivateHosts: false
+    blockedHosts: []
+    blockMedia: true
+    maxRedirects: 5
+    timeout: 30000
+    idleWaitMs: 2500
+    settleMs: 400
+    maxConcurrent: 2
+    queueWaitMs: 8000
+    maxTextChars: 6000
+    debug: true
+  chatluna-render:rnd001:
+    enabled: true
+    toolEnabled: true
+    blockEnabled: false
+    viewportWidth: 880
+    deviceScaleFactor: 2
+    maxContentChars: 30000
+    allowJavaScript: false
+    allowRemoteResources: false
+    debug: true
+  chatluna-page:pg0001:
+    enabled: true
+    viewportWidth: 880
+    deviceScaleFactor: 1.5
+    timeout: 30000
+    maxContentChars: 30000
+    cacheEnabled: true
+    cacheDir: data/page-cache
+    cacheMaxEntries: 80
+    cacheMaxMB: 40
+    cacheTTLHours: 168
+    allowTextMode: true
+    pageMaxChars: 30
+    pagerTTLMinutes: 15
+    autoRenderAllCommands: true
+    minImageChars: 1
+    keepTextCommands:
+      - cmdname.scan
+      - page.text
+      - guard.mute
+      - guard.allow
+      - guard.reset
+      - guard.refill
+      - chatluna.model.list
+      - models
+      - stages
+      - affinity.inspect
+      - affinity.rank
+      - affinity.short
+      - short
+      - vision.this
+      - persona.show
+      - routine.status
+      - episode.preview
+      - routine.push
+      - replacer
+      - replacer.list
+      - replacer.add
+      - replacer.set
+      - replacer.del
+      - replacer.remove
+      - replacer.on
+      - replacer.off
+      - replacer.test
+      - replacer.reload
+    longTextEnabled: true
+    longTextGroupsOnly: true
+    longTextMinChars: 180
+    longTextMinLines: 6
+    escapeBodyHtml: true
+    debug: true
+  chatluna-help:hlp001:
+    enabled: true
+    pageSize: 18
+    showUnavailable: true
+    showHidden: false
+    textFallback: true
+    debug: true
+  chatluna-think:thk001:
+    enabled: true
+    keepPerScope: 3
+    maxScopes: 200
+    maxChars: 6000
+    commandName: think
+    showWhenEmpty: true
+    debug: true
+  chatluna-reply-style:rst001:
+    enabled: true
+    quote: first
+    mention: first
+    mentionInDirect: false
+    maxAgeSeconds: 180
+    skipCommands: true
+    debug: true
+  chatluna-alias:als001:
+    enabled: true
+    debug: true
+  onebot-singleton-guard:sg0001:
+    enabled: true
+    enforce: true
+    endpoint: ws://127.0.0.1:3002
+    consolePort: 5141
+    recheckDelay: 20000
   adapter-onebot:aa0011:
     protocol: ws
     endpoint: ws://127.0.0.1:3002
     token: ''
     selfId: '2178517838'
+    retryLazy: 10000
+  onebot-watchdog:wd0001:
+    recoverDelay: 5000
+    minRecoverInterval: 15000
+    probeInterval: 10000
+    probeTimeout: 5000
+    probeFailures: 2
+    onlineTimeout: 20000
+  chatluna-multi-adapter:aa0031:
+    platform: cc
+    pullModels: false
+    modelListMode: 只显示模型组
+    endpointFailureCooldown: 30000
+    debug: true
+    apiKeys:
+      - - ${{ env.CC_API_KEY }}
+        - https://api.commandcode.ai/provider/v1
+        - true
+    modelGroups:
+      - enabled: true
+        name: q.dialogue
+        strategy: 出错才切换
+        availableModels: []
+        models:
+          - model: stealth/space-bunny-alpha
+            modelCapabilities:
+              - text_input
+              - tool_call
+              - image_input
+            contextSize: 1000000
+          - model: deepseek/deepseek-v4.1-flash
+            modelCapabilities:
+              - text_input
+              - tool_call
+              - image_input
+            contextSize: 1000000
+      - enabled: true
+        name: q.vision
+        strategy: 出错才切换
+        availableModels: []
+        models:
+          - model: stealth/space-bunny-alpha
+            modelCapabilities:
+              - text_input
+              - tool_call
+              - image_input
+            contextSize: 1000000
+          - model: deepseek/deepseek-v4.1-flash
+            modelCapabilities:
+              - text_input
+              - tool_call
+              - image_input
+            contextSize: 1000000
+      - enabled: true
+        name: q.sticker
+        strategy: 出错才切换
+        availableModels: []
+        models:
+          - model: stealth/space-bunny-alpha
+            modelCapabilities:
+              - text_input
+              - tool_call
+              - image_input
+            contextSize: 1000000
+          - model: deepseek/deepseek-v4.1-flash
+            modelCapabilities:
+              - text_input
+              - tool_call
+              - image_input
+            contextSize: 1000000
+      - enabled: true
+        name: q.memory
+        strategy: 出错才切换
+        availableModels: []
+        models:
+          - model: inclusionai/ling-3.1-flash:free
+            modelCapabilities:
+              - text_input
+              - tool_call
+            contextSize: 262144
+          - model: stealth/space-bunny-alpha
+            modelCapabilities:
+              - text_input
+              - tool_call
+            contextSize: 1000000
+          - model: deepseek/deepseek-v4.1-flash
+            modelCapabilities:
+              - text_input
+              - tool_call
+            contextSize: 1000000
+  chatluna-multi-adapter:aa0030:
+    platform: fakemulti
+    pullModels: false
+    modelListMode: 只显示模型组
+    endpointFailureCooldown: 30000
+    debug: true
+    apiKeys:
+      - - test-key
+        - http://127.0.0.1:3005/v1
+        - true
+    modelGroups:
+      - enabled: true
+        name: q.failover
+        strategy: 出错才切换
+        availableModels: []
+        models:
+          - model: fake-broken
+            modelCapabilities:
+              - text_input
+              - tool_call
+            contextSize: 128000
+          - model: fake-flaky
+            modelCapabilities:
+              - text_input
+              - tool_call
+            contextSize: 128000
+          - model: fake-ok2
+            modelCapabilities:
+              - text_input
+              - tool_call
+            contextSize: 128000
+      - enabled: true
+        name: q.failover500
+        strategy: 出错才切换
+        availableModels: []
+        models:
+          - model: fake-broken500
+            modelCapabilities:
+              - text_input
+              - tool_call
+            contextSize: 128000
+          - model: fake-ok
+            modelCapabilities:
+              - text_input
+              - tool_call
+            contextSize: 128000
+      - enabled: true
+        name: q.replacer
+        strategy: 出错才切换
+        availableModels: []
+        models:
+          - model: fake-emoji
+            modelCapabilities:
+              - text_input
+              - tool_call
+            contextSize: 128000

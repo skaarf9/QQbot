@@ -1,0 +1,33 @@
+{
+  "_说明": "R19 网页预览（chatluna-webpreview）端到端：指令出图 / 取正文 / SSRF 拒绝 / 整页模式 / 模型自己调工具。前 6 步全是指令，零 API 消耗；第 7 步要模型，只作软判据。",
+  "_判据": "见 .scratch/check-65.cjs 顶部 A~F。",
+  "_调用": "node tools/run-rig.cjs tools/scenarios/65-webpreview.json --keep-log --settle 20000 --run 180000",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "groupNames": { "777000562": "网页预览测试群" },
+  "steps": [
+    { "wait": 0, "group": "777000562", "user": "2791932480", "name": "绮罗星",
+      "elements": [["text", "/guard.allow"]] },
+
+    { "wait": 5000, "group": "777000562", "user": "2791932480", "name": "绮罗星",
+      "elements": [["text", "/webpreview.status"]] },
+
+    { "wait": 12000, "group": "777000562", "user": "2791932480", "name": "绮罗星",
+      "elements": [["text", "/webpreview.get https://example.com"]] },
+
+    { "wait": 14000, "group": "777000562", "user": "2791932480", "name": "绮罗星",
+      "elements": [["text", "/webpreview.get http://127.0.0.1:3001"]] },
+
+    { "wait": 9000, "group": "777000562", "user": "2791932480", "name": "绮罗星",
+      "elements": [["text", "/webpreview.text https://example.com"]] },
+
+    { "wait": 14000, "group": "777000562", "user": "2791932480", "name": "绮罗星",
+      "elements": [["text", "/webpreview.get https://news.qq.com -f"]] },
+
+    { "wait": 20000, "group": "777000562", "user": "2791932480", "name": "绮罗星",
+      "elements": [["at", "2178517838"], ["text", " 帮我看看 https://example.com 这个网页长什么样，截个图"]] },
+
+    { "wait": 30000, "group": "777000562", "user": "2791932480", "name": "绮罗星",
+      "elements": [["text", "/webpreview.status"]] }
+  ]
+}

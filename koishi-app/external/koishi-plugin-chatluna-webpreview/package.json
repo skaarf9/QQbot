@@ -1,0 +1,21 @@
+{
+  "name": "koishi-plugin-chatluna-webpreview",
+  "version": "0.1.0",
+  "description": "网页预览：把真实网址交给本机浏览器打开、截成图片发出去，同时把渲染后的正文交给模型（给 web_browse 装上浏览器）",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "private": true,
+  "keywords": ["chatbot", "koishi", "plugin", "chatluna", "web", "preview", "screenshot", "url"],
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "koishi": {
+    "description": {
+      "zh": "网页预览：网址 → 浏览器打开 → 截图发到会话；另给模型一个 web_preview 工具与 webpreview.* 指令。复用 koishi-plugin-puppeteer，不引入新依赖。"
+    },
+    "service": {
+      "required": [],
+      "optional": ["puppeteer", "chatluna"]
+    }
+  }
+}
