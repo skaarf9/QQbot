@@ -22,8 +22,14 @@ logs/
 temp/
 *.tmp
 
-# ---- 测试台跑完留下的剧本回放（每次覆盖，不入库）----
+# ---- 测试台日志（跑一轮剧本 200~400 KB）----
+#   策略：同名覆盖 + 跑完清扫超期日志，见 koishi-app/tools/log-retention.cjs
+#       和 tools/clean-logs.cjs（默认保留 7 天，last-run.log / prod.log 永不删）
+koishi-app/tools/logs/
 koishi-app/tools/last-run.log
+
+# ---- 文档切分前的原单文件备份（190 KB，确认分册没问题后可以删）----
+进度与交接.md.bak-*
 
 # ---- R12 自我扩展写配置前的备份（每次 /插件安装 都会生成一个，不入库）----
 koishi-test/koishi.yml.bak-*
@@ -41,3 +47,6 @@ models/
 Thumbs.db
 desktop.ini
 ~$*
+
+# ---- 一次性切分脚本的备份（2026-10-07 起）----
+.doc-split-backup/

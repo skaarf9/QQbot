@@ -117,8 +117,18 @@ var imageModelMatchers = [
   `Model "..." does not support image input`
 - `deepseek/deepseek-v4-flash-vision-exp` → 含 **`vision`**，**匹配** → 启用 `ImageInput` + `deepseekFileHandlingConfig`
 
-**结论：`defaultModel` 用 `deepseek/deepseek/deepseek-v4-flash-vision-exp`**，
+**结论（2026-09-29 当时的结论）：`defaultModel` 用 `deepseek/deepseek/deepseek-v4-flash-vision-exp`**，
 不用装 `chatluna-multimodal-service`，也不用改 node_modules。
+
+> ⚠️ **2026-10-07 更正：这条结论已经过时 —— 主模型现在是 `deepseek/deepseek-v4.1-flash`。**
+>
+> **「DeepSeek 支不支持视觉」的定论（不用再"待确认"了）：**
+> **v4 系列不支持图像输入；从 v4.1 起，flash 与 pro 都支持。**
+> 上面那张对照表（`v4.1-flash` 6.4 s 正确读出画面）就是最直接的实测证据 ——
+> 它证明的是**中转侧支持**；当时之所以还留着 vision-exp，卡的是 ChatLuna 的**模型名白名单**
+> `imageModelMatchers`（`deepseek-v4.1-flash` 一条都不匹配）。
+> 现在这层障碍由本项目适配器配置里**显式声明 `image_input`** 绕开，
+> 详见 [模型选型 §1.2](21-模型选型与结构化渲染.md)。
 
 > 若哪天觉得 vision-exp 的聊天质量不如 v4.1-flash，替代方案是装 `chatluna-multimodal-service`：
 > 主模型保持 v4.1-flash，图片由多模态模型生成描述后注入。代价是多一次 API 调用 + 一个插件。
