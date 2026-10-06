@@ -395,6 +395,8 @@ plugins:
       - chatluna.model.list
       - models
       - stages
+      - stages.set
+      - stages.reset
       - affinity.inspect
       - affinity.rank
       - affinity.short
@@ -481,13 +483,13 @@ plugins:
         strategy: 出错才切换
         availableModels: []
         models:
-          - model: stealth/space-bunny-alpha
+          - model: deepseek/deepseek-v4.1-flash
             modelCapabilities:
               - text_input
               - tool_call
               - image_input
             contextSize: 1000000
-          - model: deepseek/deepseek-v4.1-flash
+          - model: deepseek/deepseek-v4.1-flash-fast
             modelCapabilities:
               - text_input
               - tool_call
@@ -498,13 +500,19 @@ plugins:
         strategy: 出错才切换
         availableModels: []
         models:
-          - model: stealth/space-bunny-alpha
+          - model: deepseek/deepseek-v4.1-flash
             modelCapabilities:
               - text_input
               - tool_call
               - image_input
             contextSize: 1000000
-          - model: deepseek/deepseek-v4.1-flash
+          - model: deepseek/deepseek-v4.1-flash-fast
+            modelCapabilities:
+              - text_input
+              - tool_call
+              - image_input
+            contextSize: 1000000
+          - model: Qwen/Qwen3.8-Flash
             modelCapabilities:
               - text_input
               - tool_call
@@ -515,13 +523,19 @@ plugins:
         strategy: 出错才切换
         availableModels: []
         models:
-          - model: stealth/space-bunny-alpha
+          - model: deepseek/deepseek-v4.1-flash
             modelCapabilities:
               - text_input
               - tool_call
               - image_input
             contextSize: 1000000
-          - model: deepseek/deepseek-v4.1-flash
+          - model: deepseek/deepseek-v4.1-flash-fast
+            modelCapabilities:
+              - text_input
+              - tool_call
+              - image_input
+            contextSize: 1000000
+          - model: Qwen/Qwen3.8-Flash
             modelCapabilities:
               - text_input
               - tool_call
@@ -537,11 +551,11 @@ plugins:
               - text_input
               - tool_call
             contextSize: 262144
-          - model: stealth/space-bunny-alpha
+          - model: inclusionai/ling-3.0-flash-sante:free
             modelCapabilities:
               - text_input
               - tool_call
-            contextSize: 1000000
+            contextSize: 262144
           - model: deepseek/deepseek-v4.1-flash
             modelCapabilities:
               - text_input
@@ -551,7 +565,7 @@ plugins:
     platform: fakemulti
     pullModels: false
     modelListMode: 只显示模型组
-    endpointFailureCooldown: 30000
+    endpointFailureCooldown: 3000
     debug: true
     apiKeys:
       - - test-key

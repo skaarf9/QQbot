@@ -1,0 +1,53 @@
+{
+  "_说明": "R20 模型运维（chatluna-models 0.2.0）四件事：① /stages 改成显示**各阶段实际在用哪个模型**（读 multi-adapter 的队列表，不是抄配置）；② /stages.set 按阶段换模型（候选列表带视觉能力标注、可翻页）；③ 视觉闸门：给「要视觉的阶段」选一个不吃图的模型必须被**拒绝**；④ 「本次登录不再尝试」：走伪上游（fake-broken 恒 403）连打三次后，队列把该候选冷却抬到 Infinity，/stages 显示 ⛔ 本次登录停用。",
+  "_判据": "见 .scratch/check-66.cjs 顶部 A~H。",
+  "_前置": "① 用**新群** 777000563（第一步 /guard.allow 放行，同时保证会话是新建的）；② 必须带 --upstream --default-model fakemulti/q.failover（第 10~14 步靠伪上游制造失败；新群的会话才会用上这个临时默认模型）；③ keepTextCommands 里要有 stages / stages.set / stages.reset，否则指令输出会被出成图，判据只能看到 base64。",
+  "_跑法": "cd koishi-app && node tools/run-rig.cjs tools/scenarios/66-models-ops.json --keep-log --upstream --default-model fakemulti/q.failover --settle 20000 --run 220000",
+  "_看日志": "node .scratch/check-66.cjs",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "groupNames": { "777000563": "模型运维测试群" },
+  "steps": [
+    { "wait": 0, "group": "777000563", "user": "2791932480", "name": "绮罗星",
+      "elements": [["text", "/guard.allow"]] },
+
+    { "wait": 7000, "group": "777000563", "user": "2791932480", "name": "绮罗星",
+      "elements": [["text", "/stages"]] },
+
+    { "wait": 7000, "group": "777000563", "user": "2791932480", "name": "绮罗星",
+      "elements": [["text", "/stages.set"]] },
+
+    { "wait": 7000, "group": "777000563", "user": "2791932480", "name": "绮罗星",
+      "elements": [["text", "/stages.set 看图识别 -l 4"]] },
+
+    { "wait": 7000, "group": "777000563", "user": "2791932480", "name": "绮罗星",
+      "elements": [["text", "/stages.set 看图识别 -l 4 -p 2"]] },
+
+    { "wait": 8000, "group": "777000563", "user": "2791932480", "name": "绮罗星",
+      "elements": [["text", "/stages.set 看图识别 cc/q.memory"]] },
+
+    { "wait": 9000, "group": "777000563", "user": "2791932480", "name": "绮罗星",
+      "elements": [["text", "/stages.set 短期情景总结 cc/q.dialogue"]] },
+
+    { "wait": 8000, "group": "777000563", "user": "2791932480", "name": "绮罗星",
+      "elements": [["text", "/stages"]] },
+
+    { "wait": 8000, "group": "777000563", "user": "2791932480", "name": "绮罗星",
+      "elements": [["text", "/stages.reset 短期情景总结"]] },
+
+    { "wait": 15000, "group": "777000563", "user": "2791932480", "name": "绮罗星",
+      "elements": [["at", "2178517838"], ["text", " 兜底失败计数第一句"]] },
+
+    { "wait": 12000, "group": "777000563", "user": "2791932480", "name": "绮罗星",
+      "elements": [["at", "2178517838"], ["text", " 兜底失败计数第二句"]] },
+
+    { "wait": 12000, "group": "777000563", "user": "2791932480", "name": "绮罗星",
+      "elements": [["at", "2178517838"], ["text", " 兜底失败计数第三句"]] },
+
+    { "wait": 14000, "group": "777000563", "user": "2791932480", "name": "绮罗星",
+      "elements": [["text", "/stages"]] },
+
+    { "wait": 14000, "group": "777000563", "user": "2791932480", "name": "绮罗星",
+      "elements": [["at", "2178517838"], ["text", " 冷却生效后的第四句（应跳过被停用的首选）"]] }
+  ]
+}

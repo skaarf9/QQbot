@@ -1,0 +1,21 @@
+{
+  "name": "koishi-plugin-chatluna-models",
+  "version": "0.2.0",
+  "private": true,
+  "description": "模型总览 + 队列状态 + 阶段切换：/models 列模型（可翻页）、/stages 看各阶段实际在用哪个模型、/stages.set 按阶段换模型",
+  "main": "lib/index.js",
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "koishi": {
+    "description": {
+      "zh": "模型总览 / 队列状态 / 阶段切换（三件事）。① `/models [页码]`：上游的 `chatluna.model.list` 能翻页但页脚**没有任何翻页提示**，这个插件接管它并把页码做成位置参数（`/models 2`）。② `/stages`：把「主对话 / 看图 / 表情包判定 / 插话把关 / 情景总结 / 记忆抽取 / 嵌入」这些处理阶段**实际在用哪个模型**一次列清 —— 配置里写的常常是模型组（一串候选），真正在答的是组里第一个**没在冷却**的候选，所以状态直接从 `chatluna-multi-adapter` 的运行期队列注册表读（失败次数、冷却剩余、本次登录已停用），不是抄配置。③ `/stages.set`：按阶段换模型，候选列表带视觉能力标注并可翻页，**要视觉的阶段会拒绝不吃图的模型**（否则整组会丢掉 image_input、图片被降级成占位符）；改动写回 koishi.yml 并热重载那个插件。④ 「本次登录不再尝试」：上游冷却梯度只到 30 分钟封顶、之后还会一直重试，本插件在累计失败到阈值（默认 3 次）后把该候选的冷却抬到 Infinity，实现"本次登录不再试"，状态只在内存里、重启即复原。"
+    },
+    "service": {
+      "required": [
+        "chatluna"
+      ],
+      "optional": []
+    }
+  }
+}

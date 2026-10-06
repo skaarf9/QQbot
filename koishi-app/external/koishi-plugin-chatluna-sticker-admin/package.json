@@ -1,0 +1,21 @@
+{
+  "name": "koishi-plugin-chatluna-sticker-admin",
+  "version": "0.1.0",
+  "description": "表情包库管理：逻辑预筛（压缩率/面积/体积/长宽比不达标不判为表情包，不烧视觉调用）+ 给 AI 的 CRUD 工具（检索/改描述/删除/主动收藏/常用）",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "private": true,
+  "keywords": ["chatbot", "koishi", "plugin", "chatluna", "sticker", "emoticon"],
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "koishi": {
+    "description": {
+      "zh": "表情包管理：逻辑预筛 + AI 的 CRUD 工具（配合 chatluna-sticker 使用）"
+    },
+    "service": {
+      "required": ["database", "http"],
+      "optional": ["chatluna"]
+    }
+  }
+}
