@@ -1,0 +1,25 @@
+{
+  "_说明": "验「主动插话为什么几乎不开口」这条线的两个修复（第六轮）：\n  ① 群聊热度（pool.heat）不再被「回复后清池」抹掉 —— 以前只要群里有人 @ 了 bot 一句、bot 正常回了话，池子清零、活跃度跟着归零，于是**一波刷屏里最该插话的时刻分数永远起不来**；\n  ② 触发的那一刻必须留下一条不看 debug 开关的日志「决定插话（活跃度触发）：…… 活跃度 X / 阈值 Y，热度 N 条，待插话 M 条」，否则「到底判没判它插话」在日志里根本看不见。",
+  "_判据": "三件事同时成立才算过：\n  A) 群里的普通消息攒够之后出现 `决定插话（活跃度触发）`（第六轮新增的那行 INFO），紧接着是一次 `onebot [request] send_group_msg` 到 454444539，内容是模型自己写的一句短话**且没有引用、没有 @**（reply-style 第六轮对主动插话的放行）；\n  B) 插话那轮结束后池子被清（日志 `已在对话中回复，清空历史池（N 条）`），但**下一条**评估日志里的「热度」明显大于「待插话」—— 这就是①的直接证据：热度活着，池子归零；\n  C) 全程 `[E]` 为 0。\n\n  ★ 对照（修之前的样子）：清池之后热度=池子=0，日志只会打「候选 0 条」然后因为 pool.msgs 为空直接 continue，连评估行都不打。",
+  "_前置": "测试台 chatluna-proactive（koishi-test/koishi.yml:aa0016）：activityThreshold=0.30、thresholdCeiling=0.30、activityMessageInterval=0（关掉条数兜底，只考分数）、enableIdle=false、cooldownSeconds=0、pollSeconds=3。这样触发点只由「热度分数」决定，判据才干净。",
+  "_跑法": "cd koishi-app && node tools\\run-rig.cjs tools\\scenarios\\54-proactive-heat.json --keep-log --settle 14000 --run 150000",
+  "_看日志": "node .scratch\\trace-log.cjs koishi-app\\tools\\logs\\rig-54-proactive-heat.log 400 插话",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "group": "454444539", "groupName": "My Test", "user": "2791932480", "name": "绮罗星", "elements": [["text", "先说一句：今晚打不打"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660001", "name": "阿岚", "elements": [["text", "打啊，我这边随时能上"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660002", "name": "小夏", "elements": [["text", "等我十分钟吃完"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660001", "name": "阿岚", "elements": [["text", "又是十分钟，上次也是十分钟"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660003", "name": "老陈", "elements": [["text", "要不先开一把人机热手"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660002", "name": "小夏", "elements": [["text", "人机没意思，直接排"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660001", "name": "阿岚", "elements": [["text", "排就排，输了我背锅"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660003", "name": "老陈", "elements": [["text", "你上次也是这么说的"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660002", "name": "小夏", "elements": [["text", "行了行了，进房了"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660001", "name": "阿岚", "elements": [["text", "房间号发一下"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660003", "name": "老陈", "elements": [["text", "666777"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660002", "name": "小夏", "elements": [["text", "进了"]] },
+    { "wait": 30000, "group": "454444539", "user": "6660001", "name": "阿岚", "elements": [["text", "这波打得可以"]] },
+    { "wait": 4000, "group": "454444539", "user": "6660003", "name": "老陈", "elements": [["text", "下把继续"]] }
+  ]
+}

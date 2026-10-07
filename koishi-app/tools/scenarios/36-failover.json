@@ -1,0 +1,33 @@
+{
+  "_说明": "模型兜底队列（multi-adapter 模型轮换组）的确定性验证，三句话验三件事：① 首选 403 → 自动切第 2/3 顺位；② 18 秒后第二句：失败过的候选还在冷却 → 不该再打它们；③ 再等 35 秒（冷却 30s 到期）第三句：应该重新回到首选，失败后再次切换。",
+  "_判据": "tools\\last-upstream.log（每个上游请求一行）+ tools\\logs\\rig-36-failover.log 里的 route ok/fail 行 + 群里真的收到了兜底模型的正文",
+  "_前置": "① node tools\\seed-test-group.cjs（给 777000111 放行，否则 guard 静默拦截、根本走不到模型）② 跑台时加 --upstream --default-model fakemulti/q.failover",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    {
+      "wait": 0,
+      "group": "777000111",
+      "groupName": "兜底测试群",
+      "user": "2791932480",
+      "name": "测试员",
+      "elements": [["at", "2178517838"], ["text", " 兜底测试第一句"]]
+    },
+    {
+      "wait": 15000,
+      "group": "777000111",
+      "groupName": "兜底测试群",
+      "user": "2791932480",
+      "name": "测试员",
+      "elements": [["at", "2178517838"], ["text", " 兜底测试第二句"]]
+    },
+    {
+      "wait": 35000,
+      "group": "777000111",
+      "groupName": "兜底测试群",
+      "user": "2791932480",
+      "name": "测试员",
+      "elements": [["at", "2178517838"], ["text", " 兜底测试第三句"]]
+    }
+  ]
+}

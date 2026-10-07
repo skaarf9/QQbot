@@ -1,0 +1,19 @@
+{
+  "name": "koishi-plugin-chatluna-alias",
+  "version": "0.1.0",
+  "private": true,
+  "description": "指令别名层：把几百条原始指令收成一张「英文单词别名」常用表，用 /别名 调用",
+  "main": "lib/index.js",
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "koishi": {
+    "description": {
+      "zh": "指令别名层。运行期的指令表有 147 条（含 chatluna.* / xingyuan.* 这类带命名空间前缀的名字），对使用者来说只是噪声。这个插件用 Koishi 原生的 Command#alias() 把「常用命令」映射成英文单词别名（/model、/mood、/mute…），别名与原始指令共享同一条指令对象，参数、选项、权限、用法全部自动继承。`/help` 首页只列别名，`/help -all` 看全部原始指令。"
+    },
+    "service": {
+      "required": [],
+      "optional": []
+    }
+  }
+}

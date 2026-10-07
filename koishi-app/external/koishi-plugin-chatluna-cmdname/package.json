@@ -1,0 +1,20 @@
+{
+  "name": "koishi-plugin-chatluna-cmdname",
+  "version": "0.1.0",
+  "description": "指令名净化：把第三方插件注册的中文/非 ASCII 指令别名从指令表里摘掉，保证「命令本身」永远是英文（描述仍是中文，不影响阅读）",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "private": true,
+  "keywords": ["chatbot", "koishi", "plugin", "command", "alias", "i18n"],
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "koishi": {
+    "description": {
+      "zh": "指令名净化：只留英文指令名，摘掉第三方插件的中文别名"
+    },
+    "service": {
+      "required": []
+    }
+  }
+}

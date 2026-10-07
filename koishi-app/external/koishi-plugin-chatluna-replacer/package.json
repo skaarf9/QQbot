@@ -1,0 +1,20 @@
+{
+  "name": "koishi-plugin-chatluna-replacer",
+  "version": "0.1.0",
+  "description": "出站文本替换层：在消息发出前把指定文字替换成别的内容（例如把模型爱用的 😏 换掉），规则落库、由管理员在群里增删改查",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "private": true,
+  "keywords": ["chatbot", "koishi", "plugin", "chatluna", "replace", "output"],
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "koishi": {
+    "description": {
+      "zh": "出站替换层：把模型输出里的指定文字换成别的内容（改发送口，不改提示词）"
+    },
+    "service": {
+      "required": ["database"]
+    }
+  }
+}

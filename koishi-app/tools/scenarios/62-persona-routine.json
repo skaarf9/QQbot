@@ -1,0 +1,16 @@
+{
+  "_说明": "第九轮的端到端验证：预设里的 {persona()} / {routine()} 到底有没有渲染进提示词，以及 /routine.push 注入的生活事件能不能被模型记住并说出来。",
+  "_判据": "见 .scratch/check-62.cjs 顶部 A~E。",
+  "_调用": "node tools/run-rig.cjs tools/scenarios/62-persona-routine.json --settle 9000 --run 150000 --keep-log",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "group": "777000562", "groupName": "人设与作息测试群", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/guard.allow"]] },
+    { "wait": 3000, "group": "777000562", "user": "2791932480", "name": "绮罗星", "elements": [["at", "2178517838"], ["text", " 在干嘛呢"]] },
+    { "wait": 25000, "group": "777000562", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/routine.push 我先去吃饭啦！这个你测一下~"]] },
+    { "wait": 6000, "group": "777000562", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/mem"]] },
+    { "wait": 8000, "group": "777000562", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/day"]] },
+    { "wait": 20000, "group": "777000562", "user": "2791932480", "name": "绮罗星", "elements": [["at", "2178517838"], ["text", " 你刚刚说你要去干嘛来着？"]] },
+    { "wait": 25000, "group": "777000562", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/self vision"]] }
+  ]
+}

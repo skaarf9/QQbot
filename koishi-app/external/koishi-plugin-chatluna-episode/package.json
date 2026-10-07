@@ -1,0 +1,21 @@
+{
+  "name": "koishi-plugin-chatluna-episode",
+  "version": "0.1.0",
+  "description": "短期情景记忆 + 专注模式：把群聊和 bot 自己的话全量落库，给模型带时间戳的近况、recall 检索工具，以及游戏用的 /focus 事实账本",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "private": true,
+  "keywords": ["chatbot", "koishi", "plugin", "chatluna", "memory", "episode", "focus"],
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "koishi": {
+    "description": {
+      "zh": "短期情景记忆（带时间戳的近况 + recall 回溯）与专注模式（/focus 事实账本，游戏期间不丢细节）"
+    },
+    "service": {
+      "required": ["database"],
+      "optional": ["chatluna", "qqbotGuard"]
+    }
+  }
+}

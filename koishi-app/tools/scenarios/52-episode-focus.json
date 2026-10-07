@@ -1,0 +1,27 @@
+{
+  "_说明": "验「短期情景记忆 + 专注模式」（chatluna-episode，第五轮新增）。用户原话：『之前 ai 和我说了晚安，但是我只隔了 2 小时直接和她对话，却没有惊异于我起这么早（或者没睡），缺少了短期记忆』『我想要提供一个专注模式……开启后直到结束前，都会将当前的所有信息添加到上下文中……需要做到精确』。",
+  "_判据": "① 启动日志出现『短期情景记忆已挂载』『已注册情景记忆变量：{episode()} 与 {focus()}』『回忆工具已注册：recall』『专注模式记账工具已注册：focus_note』；② 群消息真的落进了 chatluna_episode（含**没叫 bot 的**）；③ 模型回答里出现只存在于情景库里的细节（羽毛球 / 周六三点）—— 证明 {episode()} 进了提示词；④ 滚动总结行被写出来（chatluna_episode_summary 有 summary + summarizedUntil），**这是全流程里唯一会调模型的后台动作**；⑤ /focus 的账本是结构化条目、/focus.status 报得对。",
+  "_前置": "测试实例 chatluna-guard defaultPolicy=silent、allowGroups 空 → 第一步用主人身份 /guard.allow 放行。两个群都是新号段（777000333 / 777000444），避免和 454444539 的 proactive 抢戏。",
+  "_播种": "跑之前先执行（或让 run-rig 之后的检查脚本读）：\n  node .scratch/seed-episode.cjs seed onebot:channel:777000333 12 30 koishi-test/data/test.db\n  node .scratch/seed-episode.cjs seed onebot:channel:777000444 8 30 koishi-test/data/test.db\n合成记录里含『[合成] 晚安，早点睡』『[合成] 周六下午三点去打羽毛球』—— 这两句只存在于情景库，不在会话历史里，模型答得出就说明注入生效。",
+  "_跑法": "cd koishi-app && node tools\\run-rig.cjs tools\\scenarios\\52-episode-focus.json --keep-log --settle 14000 --run 95000",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "group": "777000333", "groupName": "情景记忆测试群", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/guard.allow"]] },
+    { "wait": 4000, "group": "777000444", "groupName": "专注模式测试群", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/guard.allow"]] },
+
+    { "wait": 6000, "group": "777000333", "user": "2791932480", "name": "绮罗星", "elements": [["text", "你们还记得我昨晚说的事吗"]] },
+
+    { "wait": 14000, "group": "777000444", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/focus 海龟汤 猜出汤底"]] },
+    { "wait": 6000, "group": "777000444", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/focus.note 汤底和「水」有关，喝了会死但不是溺水"]] },
+    { "wait": 4000, "group": "777000444", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/focus.status"]] },
+    { "wait": 6000, "group": "777000444", "user": "2791932480", "name": "绮罗星", "elements": [["text", "第一口汤是什么味道的？"]] },
+    { "wait": 12000, "group": "777000444", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/focus.status"]] },
+    { "wait": 6000, "group": "777000444", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/focus.end"]] },
+
+    { "wait": 6000, "group": "777000333", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/recall 羽毛球"]] },
+    { "wait": 6000, "group": "777000333", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/recall 熬夜 晚安"]] },
+    { "wait": 6000, "group": "777000333", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/think"]] },
+    { "wait": 8000, "group": "777000333", "user": "2791932480", "name": "绮罗星", "elements": [["text", "我们周六约了什么来着？我忘了"]] }
+  ]
+}

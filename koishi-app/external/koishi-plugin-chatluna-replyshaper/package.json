@@ -1,0 +1,20 @@
+{
+  "name": "koishi-plugin-chatluna-replyshaper",
+  "version": "0.1.0",
+  "description": "回复整形：去掉模型回复里的空行；识别「不回复」哨兵，让模型能主动选择沉默（配合预设与 R9 插话时机）",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "private": true,
+  "keywords": ["chatbot", "koishi", "plugin", "chatluna", "reply", "format"],
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "koishi": {
+    "description": {
+      "zh": "回复整形：去空行 + 让 AI 可以选择「这轮不说话」"
+    },
+    "service": {
+      "required": []
+    }
+  }
+}

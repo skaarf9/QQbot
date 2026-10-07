@@ -1,0 +1,33 @@
+{
+  "_说明": "验第六轮的「理解之后再插话」两道闸（用户原话：『插入对话前需要能够理解对话再插入，不然会出现牛头不对马嘴的情况，群在聊电竞的时候直接不插入，因为电竞信息太新了，即使是提供网页搜索也不可能明白』）。闸 A = 话题关键词黑名单（零模型成本，确定性拦，只看最近 6 条）；闸 B = 把关模型判 SPEAK/SKIP。",
+  "_判据": "三段各自成立才算过。A) 电竞话题 → 一个字都不说：日志出现 `放弃插话：命中话题黑名单「…」`，且这段时间没有 `把关通过`、没有发到群里的消息（黑名单先拦，连把关模型都不该调）。B) 没内容可接 → 不说：换成只有碎片和表情的消息，日志出现 `放弃插话：把关判定不可接（…）`，同时应当看到 `插话把关模型就绪：…`（证明真的调了模型）。C) 正常闲聊 → 会开口：再换一波谁都能接一句的日常话题，日志出现 `把关通过，可以接：草稿「…」`，紧接着是一条没有引用和 @ 的插话。★ 为什么要三段：只验 A 说明不了理解这件事，只验 C 说明不了会拒绝；B 才是这次需求的真身 —— 宁可不说。",
+  "_前置": "测试台 chatluna-proactive（koishi-test/koishi.yml:aa0016）：judgeEnabled=true、judgeSkipSeconds=10、activityThreshold=0.3、ceiling=0.3、activityMessageInterval=0、enableIdle=false；judgeModel 不配 → 默认 cc/q.memory，而测试台的 q.memory 与生产是**同一套映射**（→ inclusionai/ling-3.1-flash:free），所以这里验的就是生产那个把关模型。skipTopics 用插件默认表（含 电竞/比赛/比分/战队/选手/直播/VCT/LPL/天禄/瓦罗兰特）。★ 碎片段特意给够 8 条：黑名单只看最近 6 条，窗口不清空就会一直被上一波的电竞词挡住（这正是第一次跑踩到的坑）。",
+  "_跑法": "cd koishi-app && node tools\\run-rig.cjs tools\\scenarios\\55-proactive-understanding.json --keep-log --settle 14000 --run 210000",
+  "_看日志": "node .scratch\\trace-log.cjs koishi-app\\tools\\logs\\rig-55-proactive-understanding.log 400 插话",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "group": "454444539", "groupName": "My Test", "user": "6660001", "name": "阿岚", "elements": [["text", "今晚那场看了吗"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660002", "name": "小夏", "elements": [["text", "天禄这波3-0开，真没想到"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660003", "name": "老陈", "elements": [["text", "那个狙空得我血压上来了"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660001", "name": "阿岚", "elements": [["text", "VCT CN 今年就这水平吗"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660002", "name": "小夏", "elements": [["text", "看比分好像是2-0了"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660003", "name": "老陈", "elements": [["text", "选手心态已经崩了吧"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660001", "name": "阿岚", "elements": [["text", "下场换个阵容还能打"]] },
+    { "wait": 25000, "group": "454444539", "user": "6660002", "name": "小夏", "elements": [["text", "6"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660003", "name": "老陈", "elements": [["text", "?"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660001", "name": "阿岚", "elements": [["text", "……"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660002", "name": "小夏", "elements": [["text", "6"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660003", "name": "老陈", "elements": [["text", "。"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660001", "name": "阿岚", "elements": [["text", "额"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660002", "name": "小夏", "elements": [["text", "哈"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660003", "name": "老陈", "elements": [["text", "哦"]] },
+    { "wait": 30000, "group": "454444539", "user": "6660001", "name": "阿岚", "elements": [["text", "中午吃啥啊，楼下那家好像关门了"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660002", "name": "小夏", "elements": [["text", "那家上个月就换人了"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660003", "name": "老陈", "elements": [["text", "要不点外卖，我想吃麻辣烫"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660001", "name": "阿岚", "elements": [["text", "大中午吃麻辣烫你不怕上火"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660002", "name": "小夏", "elements": [["text", "他就好这口，劝不动"]] },
+    { "wait": 3000, "group": "454444539", "user": "6660003", "name": "老陈", "elements": [["text", "冬天吃才叫爽，现在也还行"]] },
+    { "wait": 45000, "group": "454444539", "user": "6660001", "name": "阿岚", "elements": [["text", "行吧，那家新开的面馆据说还行"]] }
+  ]
+}

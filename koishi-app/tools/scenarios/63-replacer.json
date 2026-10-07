@@ -1,0 +1,37 @@
+{
+  "_说明": "验「出站文本替换层」（新插件 chatluna-replacer）。用户原话：'给对话模型的输出之上添加一个逻辑层，原因是模型总是使用 😏 这个 emoji，感觉很拽的样子，但它自己感觉不出来，又不想改提示词，所以添加一个逻辑替换层，将输出文字中的特定字符替换成特定内容，由\"管理员\"级别以上的人维护，提供群聊中可用的 CRUD 命令'",
+  "_跑法": "① node tools\\reset-replacer-rules.cjs（必须在 Koishi 没跑时执行）② cd koishi-app && node tools\\run-rig.cjs tools\\scenarios\\63-replacer.json --upstream --default-model fakemulti/q.replacer --run 175000 --keep-log",
+  "_前置": "① 必须先起伪上游（--upstream）并让默认模型走 fake-emoji 组：它的正文固定是「心情不错😏 好耶😏😏」，**本轮用户消息**里带 ZZLONG 时改吐一段长正文 —— 真模型什么时候吐 😏 由它自己决定，没法当断言依据。判定只看 messages 的最后一条，所以对话历史里残留的 ZZLONG 不会污染后面的短回复判据。② 用群 777000111（比 454444539 干净：那边开着 proactive 每 3 秒轮询，会给断言加噪音）。③ 群默认静默，第一步要 /guard.allow 放行。④ ★ 规则是落库的，上一轮留着的 #1 会让本轮 /replacer.add 撞「已经有了」，所以开跑前必须先清空规则表（见 _跑法 ①）。",
+  "_判据": [
+    "① 三个写操作门槛对：10001 普通(1级)/replacer.add → 「权限不足」；10002 管理员(3级) → 添加成功；2791932480 主人(4级) 全部可用",
+    "② CRUD 全通（落库并读回）：创建 #1/#2/#3 → 删除 #3/#2 → /replacer.set 1 嘿嘿嘿 改掉替换文本 → 末尾清单里只剩 #1、原文仍是 😏、替换文本是「嘿嘿嘿」、命中 N>0",
+    "③ 替换真的发生在**模型输出**上：出站文本里不能再出现未替换的原文 —— 即不存在 `data: { text: '心情不错😏 好耶😏😏' }` 这种 send_group_msg；实际发出的是「心情不错嘿嘿 好耶哈哈」。（入站消息、以及 /replacer.test 回执里「输入：…」那一行出现原文是**正常且必要**的，见判据 ⑥）",
+    "④ 最长匹配生效：😏😏 命中「😏😏→哈哈」而不是被「😏→嘿嘿」换两次（否则会看到「好耶嘿嘿嘿嘿」）",
+    "⑤ 停用生效：/replacer.off 1 之后，同一条模型输出变成「心情不错😏 好耶哈哈」—— 单个 😏 保留（证明 off 真的关了），😏😏 仍被 #2 换掉",
+    "⑥ 本插件自己的指令回执**不被替换**：清单里必须看到原文「😏」，「/replacer.test」的**输入行**必须是用户敲的原话。这一条钉的是「before-send 里读不到 session.argv」那个坑（第一轮就栽在这，清单印成「嘿嘿」→「嘿嘿」，对应 docs/04 坑 32）",
+    "⑦ ★ 加载顺序（第二轮才修好的真 bug）：长正文那一步**既要**有替换层的「出站替换：3 处 / 2 条规则」（😏 命中 2 次 + 😏😏 1 次，涉及 2 条规则）、**又要**在 fake-onebot 那边落成 [image] —— 只有真的排在 chatluna-page 前面才可能同时成立（排在后面的话替换层只看到一个 image 元素，根本不会打那条日志）。注意不能只看 [image]：page 排在前面照样会出图。",
+    "⑧ 本插件**自身** 0 条 [E]。★ 注意：日志里可能出现来自**真上游**的 429（本测试实例的 long-memory / 滚动总结走的是真 API，不是伪上游），那是外部限流，与本插件无关 —— 判据要按 `[E] chatluna` 的来源区分，不能一律当成失败"
+  ],
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "group": "777000111", "groupName": "Replacer Test", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/guard.allow"]] },
+    { "wait": 5000, "group": "777000111", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/replacer"]] },
+    { "wait": 5000, "group": "777000111", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/replacer.test 今天真开心😏"]] },
+    { "wait": 5000, "group": "777000111", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/replacer.add 😏 嘿嘿"]] },
+    { "wait": 5000, "group": "777000111", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/replacer.add 😏😏 哈哈"]] },
+    { "wait": 5000, "group": "777000111", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/replacer"]] },
+    { "wait": 5000, "group": "777000111", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/replacer.test 心情不错😏 好耶😏😏"]] },
+    { "wait": 5000, "group": "777000111", "user": "10001", "name": "普通群友", "elements": [["text", "/replacer.add 啦啦 略略"]] },
+    { "wait": 5000, "group": "777000111", "user": "10002", "name": "管理员", "elements": [["text", "/replacer.add 啦啦 略略"]] },
+    { "wait": 6000, "group": "777000111", "user": "2791932480", "name": "绮罗星", "elements": [["at", "2178517838"], ["text", " 说句话"]] },
+    { "wait": 16000, "group": "777000111", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/replacer.off 1"]] },
+    { "wait": 5000, "group": "777000111", "user": "2791932480", "name": "绮罗星", "elements": [["at", "2178517838"], ["text", " 再说一句"]] },
+    { "wait": 16000, "group": "777000111", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/replacer.on 1"]] },
+    { "wait": 30000, "group": "777000111", "user": "2791932480", "name": "绮罗星", "elements": [["at", "2178517838"], ["text", " 说一段比较长的 ZZLONG 内容"]] },
+    { "wait": 5000, "group": "777000111", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/replacer.del 3"]] },
+    { "wait": 5000, "group": "777000111", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/replacer.del 2"]] },
+    { "wait": 5000, "group": "777000111", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/replacer.set 1 嘿嘿嘿"]] },
+    { "wait": 5000, "group": "777000111", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/replacer"]] }
+  ]
+}

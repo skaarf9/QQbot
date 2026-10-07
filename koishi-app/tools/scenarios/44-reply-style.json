@@ -1,0 +1,18 @@
+{
+  "_说明": "验「出站引用 + @ 群友」（新插件 chatluna-reply-style）。用户原话：'ai引用消息(以及@群友)的功能，似乎目前还没实现?' —— 确实没实现，出站侧一个 h('quote') 都没有。",
+  "_判据": "① @bot 说话 → 模型回复时日志出现「出站形态：引用 <id> + @ 2791932480（群 454444539）」，且 fake-onebot 收到的 message 数组**第一个是 reply、第二个是 at**\n② 同一轮再发一条 → **不重复**加（quote=first 一轮只加一次）\n③ /replystyle（指令输出）→ 日志**没有**出站形态行（skipCommands=true）\n④ /replystyle.quote off 之后再 @bot 说话 → 不再引用，但 **@ 还在**（两个开关独立）\n⑤ 全场景 0 条 [E]",
+  "_前置": "chatluna-reply-style：quote=first、mention=first、skipCommands=true",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "group": "454444539", "groupName": "My Test", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/guard.allow"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["at", "2178517838"], ["text", " 在吗，回我一句短的"]] },
+    { "wait": 15000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/replystyle"]] },
+    { "wait": 8000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/replystyle.quote off"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["at", "2178517838"], ["text", " 再说一句短的"]] },
+    { "wait": 16000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/replystyle.quote first"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/replystyle.mention off"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["at", "2178517838"], ["text", " 最后一句"]] },
+    { "wait": 16000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/replystyle"]] }
+  ]
+}

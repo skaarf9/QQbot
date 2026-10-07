@@ -1,0 +1,21 @@
+{
+  "name": "koishi-plugin-chatluna-think",
+  "version": "0.1.0",
+  "private": true,
+  "description": "思考过程展示：把模型返回的 reasoning 渲染成图片",
+  "main": "lib/index.js",
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "koishi": {
+    "description": {
+      "zh": "思考过程展示：从 chatluna/after-chat 事件里取出模型返回的 reasoning 内容，用 /think 渲染成图片。全程不调用 API —— 只读模型**已经返回**的内容。模型没给思考过程时明确说没有，不伪造。"
+    },
+    "service": {
+      "required": [],
+      "optional": [
+        "chatlunaPage"
+      ]
+    }
+  }
+}

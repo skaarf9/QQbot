@@ -1,0 +1,33 @@
+{
+  "_说明": "群聊上下文注入验证：先让两个**没叫 bot** 的群友聊两句，再 @bot 问'你们刚才聊啥呢'。判据是 ChatLuna 落盘的请求日志（%TEMP%\\chatluna\\logs\\chatluna-log-*.log）里能不能看到 ① 群名/群号/人数 ② 说话人的群名片 ③ 前面那两条没触发的消息。",
+  "_前置": "koishi-test/koishi.yml 里已启用 chatluna-toolbox + chatluna-variable-extension，且预设里写了 {groupInfo()} {userInfo()} {botInfo()} {latest_message(6)}。跑台：node tools\\run-rig.cjs tools\\scenarios\\37-context-vars.json --upstream --default-model fakemulti/q.failover --run 40000",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "groupNames": { "777000111": "兜底测试群" },
+  "steps": [
+    {
+      "wait": 0,
+      "group": "777000111",
+      "groupName": "兜底测试群",
+      "user": "10001",
+      "name": "路人甲",
+      "card": "甲甲",
+      "elements": [["text", "今晚吃什么好啊"]]
+    },
+    {
+      "wait": 3000,
+      "group": "777000111",
+      "user": "10001",
+      "name": "路人甲",
+      "elements": [["text", "我想吃火锅了"]]
+    },
+    {
+      "wait": 9000,
+      "group": "777000111",
+      "user": "2791932480",
+      "name": "测试员",
+      "card": "测试员本员",
+      "elements": [["at", "2178517838"], ["text", " 你们刚才聊啥呢"]]
+    }
+  ]
+}

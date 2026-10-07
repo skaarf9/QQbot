@@ -11,7 +11,7 @@
  *   3  管理员 破坏性、影响他人的指令（删会话 / 停对话 / 切模型 / 换预设 / 清空 …）
  *   2  信任   预留给 R4 好感度达标者
  *   1  普通   默认等级（Koishi 的 autoAuthorize 默认就是 1）
- *   0  拉黑   连 /帮助 都用不了
+ *   0  拉黑   连 /qqbot.help 都用不了
  *
  * ---
  * ★ 三条实测出来的硬事实（2026-09-29 用运行期探针验的，别凭印象改）
@@ -23,7 +23,7 @@
  * 2. `autoAuthorize` 默认值就是 **1**（koishi/lib/index.cjs:2433，
  *    Schema.natural().default(1)）。任何发过消息的人都会被自动建行并拿到 1 级。
  *    而且这个值**只在建行时写一次**（core:1916，getUser 里查不到才用），
- *    改配置不影响已有行 —— 想降级必须显式写库或用 /权限/设置。
+ *    改配置不影响已有行 —— 想降级必须显式写库或用 qqbot.auth.set。
  *
  * 3. 一个指令的**有效门槛 = 它自己与所有祖先指令上 `authority:N` 的最大值**。
  *    判定时整条链都要过，只读自己的 config.permissions 会漏。
@@ -118,7 +118,7 @@ module.exports.Config = Schema.object({
     .default([]),
   blockedIds: Schema.array(String)
     .role('table')
-    .description('拉黑（等级 0）。连 /帮助 都拒绝。')
+    .description('拉黑（等级 0）。连 /qqbot.help 都拒绝。')
     .default([]),
   raiseDangerousCommands: Schema.boolean()
     .description(
@@ -180,7 +180,7 @@ module.exports.apply = (ctx, config) => {
   //
   // 读的是 chatluna-affinity 的表 `chatluna_affinity_v2`（主键是 scopeId + userId，
   // 见插件 `lib/index.js:990-1007`）。只在「不在任何名单里，且当前等级 ≤2」时接管 ——
-  // 3/4 级是人工用 /权限设置 给的，不能被好感度掀掉。
+  // 3/4 级是人工用 qqbot.auth.set 给的，不能被好感度掀掉。
   //
   // 加 10 秒缓存：attach-user 每条消息都跑，不能每条都查库；但也不能太久
   // （好感度是一轮对话里就可能变的东西，缓存 60 秒会让升级慢半拍，实测踩过）。
@@ -396,34 +396,27 @@ module.exports.apply = (ctx, config) => {
   //
   // ★ 触发写法（这些结论都是实测出来的，改之前先看第八·十三节）
   //
-  //   1. Koishi **没有** `命令/子命令` 这种写法。`/chatluna/stop`、`/权限/我的`
-  //      一律解析不到 —— `Argv.parse` 只按空格切词，然后 `_resolve` 按**点号**
-  //      拆段。所以只有 `/chatluna.stop`、`/权限.我的` 这种点号写法有效。
+  //   1. Koishi **没有** `命令/子命令` 这种写法：`Argv.parse` 只按空格切词，
+  //      `_resolve` 按**点号**拆段，所以只有 `/chatluna.stop` 这种点号写法有效。
   //   2. 自动别名是**整条命令名**（`ctx.command('qqbot.auth')` → 别名就是
   //      `qqbot.auth`），不是最后一段，所以短名 `auth` 不存在。
-  //   3. 别名的参数必须**单独**传：`alias('权限设置 <a> <b>')` 会把尖括号一起
-  //      当成 key 存进去，永远匹配不上；要写 `alias('权限设置', { args: [...] })`。
+  //   3. （历史坑位）别名的参数声明不能写进别名名里，必须单独传
+  //      `alias(name, { args: [...] })`。
   //
-  //   结论：中文名一律用**扁平的单 token 别名**（`权限我的`、`权限设置`），
-  //   不带任何分隔符，这样 `/权限我的` 才能被解析。
+  //   结论：**指令名一律英文**（2026-10-02 起，全局约定）。中文只出现在
+  //   描述/帮助文案里；不再注册中文别名（会污染指令列表，也会被
+  //   chatluna-cmdname 净化插件摘掉）。
   const GROUP = { authority: 1 }
 
-  const CMD_HELP = [
-    '权限分五级：',
-    '  4 主人     装卸插件 / 开关指令 / 给人授权',
-    '  3 管理员   删会话、停对话、切模型、换预设等管理指令',
-    '  2 信任     预留给好感度',
-    '  1 普通     默认等级',
-    '  0 拉黑     连 /权限我的 都拒绝',
-    '',
-    '可用指令：',
-    '  /帮助                     显示这份清单',
-    '  /回声 <内容>              把话原样说回来（调试用）',
-    '  /权限我的                 查自己的等级',
-    '  /权限列表                 看四级名单（仅主人）',
-    '  /权限设置 <QQ号> <0-4>    改别人等级（仅主人）',
-    '  /权限重扫                 重新应用提权规则（仅主人）',
-  ].join('\n')
+  // ★ 2026-10-03：原来这里有一份手写的 CMD_HELP 指令清单（只有 8 行，只覆盖 qqbot.*），
+  //   而运行期指令表实际有 135 条 —— 手写清单必然越写越旧。
+  //   现在整块帮助**搬到了 `koishi-plugin-chatluna-help`**：它从 `_commandList` 现场枚举，
+  //   按类目/等级出图。这里只留一句指路，避免两处各写一份又对不上。
+  //
+  //   同时**摘掉了 `qqbot.help` 与它的 `help` 别名**：框架的 `@koishijs/plugin-help` 也注册
+  //   一个 `help`（authority:0，见 plugin-help/lib/index.js:129），三处同名会打架。
+  //   帮助的唯一定义权归 chatluna-help。
+  const HELP_POINTER = '权限分五级：4 主人 / 3 管理员 / 2 信任 / 1 普通 / 0 拉黑。\n完整指令清单发 /help（图文版）。'
 
   /** 统一的注册入口：一个命令挂多个名字（英文 + 中文扁平别名）
    *
@@ -444,20 +437,20 @@ module.exports.apply = (ctx, config) => {
     return cmd
   }
 
-  // 总入口：/权限
-  define('qqbot.auth', ['权限'], '权限分级：查看与设置权限等级', GROUP, async ({ session }) => {
+  // 总入口：/qqbot.auth
+  define('qqbot.auth', [], '权限分级：查看与设置权限等级', GROUP, async ({ session }) => {
     const lv = session.user?.authority ?? 1
-    return `你的权限等级是 ${lv}（${LEVEL_NAMES[lv] ?? '未知'}）。\n\n${CMD_HELP}`
+    return `你的权限等级是 ${lv}（${LEVEL_NAMES[lv] ?? '未知'}）。\n\n${HELP_POINTER}`
   })
 
-  // 查自己：/权限我的
-  define('qqbot.auth.me', ['权限我的'], '查看自己的权限等级', GROUP, async ({ session }) => {
+  // 查自己：/qqbot.auth.me
+  define('qqbot.auth.me', [], '查看自己的权限等级', GROUP, async ({ session }) => {
     const lv = session.user?.authority ?? 1
     return `你的权限等级是 ${lv}（${LEVEL_NAMES[lv] ?? '未知'}）`
   })
 
-  // 看名单：/权限列表
-  define('qqbot.auth.list', ['权限列表'], '查看四级名单', GROUP, async () => {
+  // 看名单：/qqbot.auth.list
+  define('qqbot.auth.list', [], '查看四级名单', GROUP, async () => {
     const lines = ['权限名单：']
     for (const [key, lv] of [
       ['ownerIds', 4],
@@ -472,10 +465,10 @@ module.exports.apply = (ctx, config) => {
     return lines.join('\n')
   })
 
-  // 改等级：/权限设置 <QQ号> <0-4>
+  // 改等级：/qqbot.auth.set <QQ号> <0-4>
   define(
     'qqbot.auth.set <target:string> <level:natural>',
-    ['权限设置'],
+    [],
     '设置某人的权限等级（0-4）',
     { authority: 4 },
     async ({ session }, target, level) => {
@@ -498,24 +491,20 @@ module.exports.apply = (ctx, config) => {
     }
   )
 
-  // 重扫：/权限重扫
-  define('qqbot.auth.rescan', ['权限重扫'], '手动重扫并应用提权规则', { authority: 4 }, async () => {
+  // 重扫：/qqbot.auth.rescan
+  define('qqbot.auth.rescan', [], '手动重扫并应用提权规则', { authority: 4 }, async () => {
     scanOnce('手动')
     return '已重扫，明细见日志。'
   })
 
-  // 帮助：/帮助
-  //
-  // ★ 为什么不用框架自带的 `@koishijs/plugin-help`：实测里它的 `help` 指令
-  //   在本实例中**根本没进指令表**（`ctx.$commander.get('help')` 查不到），
-  //   `/help` 和 `/echo` 都解析不出来。框架那两个指令在本组合下不可用，
-  //   所以这里自带一份 —— 它们对"普通群友也能随便用"这条需求是必需的。
-  define('qqbot.help', ['帮助', 'help'], '显示可用指令', GROUP, async () => CMD_HELP)
+  // 帮助：★ 2026-10-03 起**不再由本插件提供** —— 整块搬去了 koishi-plugin-chatluna-help
+  // （现场枚举全部指令、按类目分级出图）。这里原来那条 `qqbot.help` + `help` 别名已删除，
+  // 否则会和框架的 `@koishijs/plugin-help`（也注册 `help`）抢同一个名字。
 
-  // 回声（调试用）：/回声 <内容>
+  // 回声（调试用）：/qqbot.echo <内容>
   define(
     'qqbot.echo <message:text>',
-    ['回声'],
+    [],
     '把话原样说回来',
     GROUP,
     async ({ session }, message) => {
@@ -544,19 +533,11 @@ module.exports.apply = (ctx, config) => {
     setTimeout(() => {
       const names = [
         'qqbot.auth',
-        '权限',
         'qqbot.auth.me',
-        '权限我的',
         'qqbot.auth.list',
-        '权限列表',
         'qqbot.auth.set',
-        '权限设置',
         'qqbot.auth.rescan',
-        '权限重扫',
-        'qqbot.help',
-        '帮助',
         'qqbot.echo',
-        '回声',
       ]
       const bad = names.filter((n) => !ctx.$commander?.get?.(n))
       if (bad.length) {

@@ -1,0 +1,35 @@
+{
+  "_说明": "验三件事：① 指令帮助体系三级出图（总览/类目/分页/单条详情/找不到）② /page.text 文字开关 ③ 状态类指令的**自动出图**（不改那些插件一行代码，靠 chatluna-page 挂在 before-send 上兜住）。全部走私聊。",
+  "_判据": "1) 日志出现「指令目录就绪」且未归类条数为 0（类目规则要能吃掉 xingyuan.* ）；2) 指令说明里**不能再出现 [object Object]**；3) data/page-cache/ 下每步都多一张 PNG；4) 自动出图那几条日志里要看到「自动出图：<指令名>」；5) 没有 [E]",
+  "_前置": "测试实例装了 puppeteer / chatluna-render / chatluna-page / chatluna-help / chatluna-think；用户 2791932480 是主人（等级 4）",
+  "_注意": "fake-onebot 把「第一个不以 -- 开头的参数」当剧本路径，剧本路径必须写在 --port 前面",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "user": "2791932480", "name": "绮罗星", "elements": [["text", "/help"]] },
+    { "wait": 8000, "user": "2791932480", "name": "绮罗星", "elements": [["text", "/help chat"]] },
+    { "wait": 8000, "user": "2791932480", "name": "绮罗星", "elements": [["text", "/help chat 3"]] },
+    { "wait": 8000, "user": "2791932480", "name": "绮罗星", "elements": [["text", "/help chatluna.use.model"]] },
+    { "wait": 8000, "user": "2791932480", "name": "绮罗星", "elements": [["text", "/help zzz-not-a-command"]] },
+    { "wait": 8000, "user": "2791932480", "name": "绮罗星", "elements": [["text", "/help auth"]] },
+    { "wait": 8000, "user": "2791932480", "name": "绮罗星", "elements": [["text", "/help affinity"]] },
+    { "wait": 8000, "user": "2791932480", "name": "绮罗星", "elements": [["text", "/help basic"]] },
+
+    { "wait": 8000, "user": "2791932480", "name": "绮罗星", "elements": [["text", "/emotion"]] },
+    { "wait": 8000, "user": "2791932480", "name": "绮罗星", "elements": [["text", "/guard.status"]] },
+    { "wait": 8000, "user": "2791932480", "name": "绮罗星", "elements": [["text", "/render.status"]] },
+    { "wait": 8000, "user": "2791932480", "name": "绮罗星", "elements": [["text", "/vision.stat"]] },
+    { "wait": 8000, "user": "2791932480", "name": "绮罗星", "elements": [["text", "/followup"]] },
+    { "wait": 8000, "user": "2791932480", "name": "绮罗星", "elements": [["text", "/scene"]] },
+    { "wait": 8000, "user": "2791932480", "name": "绮罗星", "elements": [["text", "/page.list"]] },
+    { "wait": 8000, "user": "2791932480", "name": "绮罗星", "elements": [["text", "/page.status"]] },
+
+    { "wait": 8000, "user": "2791932480", "name": "绮罗星", "elements": [["text", "/page.text on"]] },
+    { "wait": 5000, "user": "2791932480", "name": "绮罗星", "elements": [["text", "/guard.status"]] },
+    { "wait": 5000, "user": "2791932480", "name": "绮罗星", "elements": [["text", "/help"]] },
+    { "wait": 5000, "user": "2791932480", "name": "绮罗星", "elements": [["text", "/page.text off"]] },
+
+    { "wait": 5000, "user": "2791932480", "name": "绮罗星", "elements": [["text", "/think"]] },
+    { "wait": 5000, "user": "2791932480", "name": "绮罗星", "elements": [["text", "/think.status"]] }
+  ]
+}

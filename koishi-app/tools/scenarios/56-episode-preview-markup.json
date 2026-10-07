@@ -1,0 +1,17 @@
+{
+  "_说明": "验「/mem（episode.preview）把元素标记原样打出来，导致整条消息发不出去」这个 bug 的修复（坑 58）。加这个剧本的直接起因：10-03 19:18 与 19:23 两次 /mem 都失败在 retcode 1200「下载文件失败: Bad Request」—— 近况里的图片是以 `<img src=\"https://…rkey=…\"/>` 这种**元素标记**存进库的，打印出来又被 Koishi 当元素解析成真的图片元素，NapCat 去下载早已过期的 rkey 链接就整条消息发不出去。",
+  "_判据": "跑完在日志里找 /mem 的那次 send_group_msg（正文含「模型实际看到的内容」），三个条件同时成立才算过：A) 这条消息里**没有** `type: 'image'` 且 `file` 是 http 链接的段（修复前这里会有 2 个）；B) 正文里出现 `［含 1 张图］`（说明图片这件事没丢，只是不再泄漏标记）；C) 正文里**没有** `<img` 字样、也没有 `multimedia.nt.qq.com` 这类签名 URL。",
+  "_前置": "测试台自带 chatluna-episode:aa0032（storeScopes=allow、windowMessages=6、summaryEnabled=true）+ chatluna-alias:als001（mem → episode.preview）+ chatluna-guard。★ **必须先把 `episode.preview` 加进 chatluna-page:pg0001.keepTextCommands**（koishi-test/koishi.yml），否则 page 会把 /mem 的输出渲染成图片发出去，日志里只剩一个 base64，判据没法验（第一次跑就是这么白跑的）。跑完记得把那行删掉。",
+  "_跑法": "cd koishi-app && node tools\\run-rig.cjs tools\\scenarios\\56-episode-preview-markup.json --keep-log --settle 14000 --run 60000",
+  "_看日志": "node .scratch\\check-56.cjs koishi-app\\tools\\logs\\rig-56-episode-preview-markup.log",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "group": "454444539", "groupName": "My Test", "user": "6660001", "name": "阿岚", "elements": [["text", "看我刚拍的这只"]] },
+    { "wait": 2500, "group": "454444539", "groupName": "My Test", "user": "6660001", "name": "阿岚", "elements": [["image", "http://127.0.0.1:3003/pig.jpg"]] },
+    { "wait": 2500, "group": "454444539", "groupName": "My Test", "user": "6660002", "name": "小夏", "elements": [["text", "这也太胖了吧"]] },
+    { "wait": 2500, "group": "454444539", "groupName": "My Test", "user": "6660002", "name": "小夏", "elements": [["image", "http://127.0.0.1:3003/small.jpg"]] },
+    { "wait": 2500, "group": "454444539", "groupName": "My Test", "user": "6660003", "name": "老陈", "elements": [["text", "跟大肥鱼一个体型"]] },
+    { "wait": 4000, "group": "454444539", "groupName": "My Test", "user": "2791932480", "name": "绮罗星", "elements": [["at", "2178517838"], ["text", " /mem"]] }
+  ]
+}

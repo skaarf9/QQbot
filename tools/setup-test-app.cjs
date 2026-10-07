@@ -20,11 +20,11 @@ if (!fs.existsSync(link)) {
   console.log('node_modules junction 已存在')
 }
 
-// 预设直接复制一份
-const preset = path.join(TEST, 'data/chathub/presets/xingyuan.yml')
+// 预设直接复制一份（功能化命名：default-persona.yml）
+const preset = path.join(TEST, 'data/chathub/presets/default-persona.yml')
 if (!fs.existsSync(preset)) {
-  fs.copyFileSync(path.join(APP, 'data/chathub/presets/xingyuan.yml'), preset)
-  console.log('已复制预设 xingyuan.yml')
+  fs.copyFileSync(path.join(APP, 'data/chathub/presets/default-persona.yml'), preset)
+  console.log('已复制预设 default-persona.yml')
 }
 
 console.log('测试实例目录就绪：' + TEST)

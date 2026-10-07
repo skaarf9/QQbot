@@ -1,0 +1,21 @@
+{
+  "name": "koishi-plugin-onebot-watchdog",
+  "version": "0.1.0",
+  "description": "OneBot 断线自动重连：看门狗 + 心跳探活，治上游「断线后静默不重连」的死锁",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "private": true,
+  "keywords": ["chatbot", "koishi", "plugin", "onebot", "reconnect", "watchdog", "napcat"],
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "koishi": {
+    "description": {
+      "zh": "OneBot 断线自动重连：状态事件看门狗 + 心跳探活（治半开连接）。上游 bug 的兜底，详见 docs/23"
+    },
+    "service": {
+      "required": [],
+      "optional": []
+    }
+  }
+}

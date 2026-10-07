@@ -1,0 +1,21 @@
+{
+  "name": "koishi-plugin-onebot-singleton-guard",
+  "version": "0.1.0",
+  "description": "启动自检：同一个 OneBot 端点已经有实例在服务时拒绝启动（治「一条命令两条回复」）",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "private": true,
+  "keywords": ["chatbot", "koishi", "plugin", "onebot", "singleton", "napcat", "duplicate"],
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "koishi": {
+    "description": {
+      "zh": "启动自检：如果 NapCat 端点上已经有别的进程连着（或控制台端口已被占用），就拒绝启动并打印收尾命令。治「一条命令两条回复」——详见 docs/04 坑 70"
+    },
+    "service": {
+      "required": [],
+      "optional": []
+    }
+  }
+}

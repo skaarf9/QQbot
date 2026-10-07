@@ -13,19 +13,67 @@
  *   node tools/napcat-probe.cjs send-group <群号> <文本>
  */
 const fs = require('node:fs')
+const path = require('node:path')
 
-const CONFIG = 'H:/NapCat.Shell/config/onebot11_2178517838.json'
+/**
+ * ★ 2026-10-04：这里原来写死 `H:/NapCat.Shell/config/onebot11_2178517838.json`。
+ *   NapCat 后来搬到了 D 盘，于是**排障第一步直接 ENOENT 崩掉**（docs/23 那套五分钟定位流程
+ *   第一句就跑不动）—— 是查「两条回复」时顺带撞见的（坑 70）。
+ *   现在自动找：优先挑"有启用的 websocketServers、且服务器名是 koishi"的那份配置。
+ *   想手工指定：NAPCAT_CONFIG=<onebot11_xxx.json 全路径>，或 NAPCAT_HOME=<NapCat.Shell 目录>。
+ */
+const CANDIDATE_ROOTS = [
+  process.env.NAPCAT_HOME,
+  'D:/deepseek/QQbot/NapCat.Shell',
+  'H:/NapCat.Shell',
+  'D:/NapCat.Shell',
+].filter(Boolean)
 
-function loadEndpoint() {
-  const cfg = JSON.parse(fs.readFileSync(CONFIG, 'utf8'))
-  const list = cfg?.network?.websocketServers ?? []
-  const srv = list.find((s) => s.name === 'koishi') ?? list[0]
-  if (!srv) throw new Error('NapCat 配置里没有 websocketServers')
-  const token = srv.token ? `?access_token=${encodeURIComponent(srv.token)}` : ''
-  return { url: `ws://${srv.host}:${srv.port}/${token}`, srv }
+/** 在候选根目录里挑一份可用的 onebot11_*.json */
+function findConfig() {
+  if (process.env.NAPCAT_CONFIG) {
+    return { file: process.env.NAPCAT_CONFIG, cfg: JSON.parse(fs.readFileSync(process.env.NAPCAT_CONFIG, 'utf8')) }
+  }
+  const hits = []
+  for (const root of CANDIDATE_ROOTS) {
+    const dir = path.join(root, 'config')
+    if (!fs.existsSync(dir)) continue
+    for (const name of fs.readdirSync(dir)) {
+      if (!/^onebot11_.+\.json$/.test(name)) continue
+      const file = path.join(dir, name)
+      let cfg
+      try {
+        cfg = JSON.parse(fs.readFileSync(file, 'utf8'))
+      } catch {
+        continue
+      }
+      const enabled = (cfg?.network?.websocketServers ?? []).filter((s) => s.enable !== false)
+      if (!enabled.length) continue
+      const koishi = enabled.find((s) => s.name === 'koishi')
+      hits.push({ file, cfg, rank: koishi ? 0 : 1, mtime: fs.statSync(file).mtimeMs })
+    }
+  }
+  if (!hits.length) {
+    throw new Error(
+      `找不到带启用 websocketServers 的 NapCat onebot11 配置。找过：${CANDIDATE_ROOTS.join(' / ')}；` +
+        '可用 NAPCAT_CONFIG=<文件全路径> 直接指定。',
+    )
+  }
+  // 服务器名叫 koishi 的优先；同档取最近改过的
+  hits.sort((a, b) => a.rank - b.rank || b.mtime - a.mtime)
+  return hits[0]
 }
 
-const { url, srv } = loadEndpoint()
+function loadEndpoint() {
+  const { file, cfg } = findConfig()
+  const list = cfg?.network?.websocketServers ?? []
+  const srv = list.find((s) => s.name === 'koishi' && s.enable !== false) ?? list.find((s) => s.enable !== false) ?? list[0]
+  if (!srv) throw new Error('NapCat 配置里没有 websocketServers')
+  const token = srv.token ? `?access_token=${encodeURIComponent(srv.token)}` : ''
+  return { url: `ws://${srv.host}:${srv.port}/${token}`, srv, file }
+}
+
+const { url, srv, file: configFile } = loadEndpoint()
 const argv = process.argv.slice(2)
 const cmd = argv[0] || 'watch'
 const verbose = argv.includes('--verbose')
@@ -34,7 +82,7 @@ const seconds = secondsArg >= 0 ? Number(argv[secondsArg + 1]) : 120
 
 const stamp = () => new Date().toLocaleTimeString('zh-CN', { hour12: false })
 
-console.log(`[probe] 连接 ${url.replace(/access_token=.*/, 'access_token=***')}（服务器 "${srv.name}"）`)
+console.log(`[probe] 连接 ${url.replace(/access_token=.*/, 'access_token=***')}（服务器 "${srv.name}"，配置 ${configFile}）`)
 
 const sock = new WebSocket(url)
 let echo = 0
@@ -95,6 +143,14 @@ sock.addEventListener('open', async () => {
       const fl = friends.data ?? []
       console.log(`[probe] 好友数量 ${fl.length}；前 20 个：`)
       for (const f of fl.slice(0, 20)) console.log(`   - ${f.user_id} ${f.nickname}`)
+    } else if (cmd === 'call') {
+      // 通用调用：call <action> [JSON 参数]，排查时不用改代码
+      const action = argv[1]
+      if (!action) throw new Error('用法：call <action> [JSON 参数]，例如 call get_recent_contact / call get_group_msg_history {"group_id":454444539,"count":5}')
+      const params = argv[2] ? JSON.parse(argv.slice(2).join(' ')) : {}
+      const res = await call(action, params)
+      const body = JSON.stringify(res.data ?? res)
+      console.log(`[probe] ${action} => ${body.length > 4000 ? `${body.slice(0, 4000)}…` : body}`)
     } else if (cmd === 'send-private' || cmd === 'send-group') {
       const target = argv[1]
       const text = argv.slice(2).join(' ')

@@ -1,0 +1,27 @@
+{
+  "_说明": "验证【spacebunny 当主对话模型】时它会不会调工具 —— 这是硬门槛。第一步就要求它记住一件事（预设里对应 memory_add 工具），第二步要求它调 affinity_affinity 改好感度。只要第一轮 spacebunny 自己答上了（而不是 502 切给 v4.1-flash），就能从日志里看出它到底调没调工具。",
+  "_前置": "同 38；测试群 777000111 已在 qqbot_guard 放行。",
+  "_跑法": "node tools\\run-rig.cjs tools\\scenarios\\39-spacebunny-tools.json --keep-log --run 110000  （不加 --upstream，打真实上游）",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "groupNames": { "777000111": "兜底测试群" },
+  "steps": [
+    {
+      "wait": 0,
+      "group": "777000111",
+      "groupName": "兜底测试群",
+      "user": "2791932480",
+      "name": "测试员",
+      "card": "测试员本员",
+      "elements": [["at", "2178517838"], ["text", " 记住我最喜欢吃火锅，以后可以问我"]]
+    },
+    {
+      "wait": 30000,
+      "group": "777000111",
+      "user": "2791932480",
+      "name": "测试员",
+      "card": "测试员本员",
+      "elements": [["at", "2178517838"], ["text", " 给我加3点好感度，理由是我很幽默"]]
+    }
+  ]
+}

@@ -79,9 +79,18 @@ const Config = Schema.intersect([
       .role('table')
       .default([])
       .description('申请安装时私聊通知谁（填主人的 QQ；留空则只在群里说一声）'),
+    notifyOwnerOnRequest: Schema.boolean()
+      .default(true)
+      .description(
+        '有人 /selfext.request 申请装插件时，私聊通知 ownerIds。默认开。' +
+          '★ 关掉它的场合：用户 2026-10-03 定的原则是「除了命令产生的回复以及 ai 做的回复，' +
+          '不要逻辑代码额外产生的回复，宁愿不说话」。这条**是命令驱动的**（有人敲了 /apply），' +
+          '而且是私聊发给主人、不进群，所以默认留着；' +
+          '实在不想要就关掉，改用 /selfext.requests 主动查看。'
+      ),
     allowInstall: Schema.boolean()
       .default(true)
-      .description('是否允许安装（关掉后 /插件安装 直接拒绝，只保留搜索与申请）'),
+      .description('是否允许安装（关掉后 /selfext.install 直接拒绝，只保留搜索与申请）'),
     persistConfig: Schema.boolean()
       .default(true)
       .description('热挂载后是否把插件条目写进 koishi.yml（写前自动备份）。关掉则重启后失效'),
@@ -422,9 +431,10 @@ function apply(ctx, config) {
       `理由：${request.reason || '（没写）'}\n` +
       (request.description ? `描述：${request.description.replace(/\s+/g, ' ').slice(0, 120)}\n` : '') +
       (danger.length ? `⚠️ 危险：描述里有「${danger.join('、')}」\n` : '') +
-      `\n确认安装：/插件安装 ${request.pkg}` +
+      `\n确认安装：/selfext.install ${request.pkg}` +
       (danger.length ? ' -f（危险包必须加 -f）' : '')
-    for (const owner of config.ownerIds || []) {
+    const notifyOwners = config.notifyOwnerOnRequest === false ? [] : config.ownerIds || []
+    for (const owner of notifyOwners) {
       try {
         const bot = ctx.bots[0]
         if (bot) await bot.sendPrivateMessage(owner, ownerText)
@@ -460,7 +470,7 @@ function apply(ctx, config) {
         return (
           `⚠️ 「${spec.pkg}」的描述里有「${danger.join('、')}」，看着不是好东西，我拒绝安装。\n` +
           `描述原文：${registry.describe(item).slice(0, 120)}\n` +
-          `你确定要装就加 -f：/插件安装 ${spec.pkg} -f`
+          `你确定要装就加 -f：/selfext.install ${spec.pkg} -f`
         )
       }
     } else {
@@ -482,26 +492,29 @@ function apply(ctx, config) {
 
   // ---------------------------------------------------------------- 指令
 
+  // ★ 指令名一律英文点号（父名 = 插件短名 selfext，与 guard.*/scene.* 一致）。
+  //   不能用 plugin.*：官方 market 插件已经占了 plugin.install / plugin.uninstall / plugin.upgrade。
+  //   连字符旧名（plugin-search 等）保留为别名；**不留中文别名**（会出现在指令列表里）。
   ctx
-    .command('插件搜索 <keywords:text>', '在 Koishi 插件市场里搜插件', { authority: 1 })
-    .alias('plugin-search')
+    .command('selfext.search <keywords:text>', '在 Koishi 插件市场里搜插件', { authority: 1 })
+    .alias('plugin-search', { args: [] })
     .action(async (_argv, keywords) => searchText(keywords))
 
   ctx
-    .command('插件申请 <name:string> [reason:text]', '申请安装一个插件（等主人确认）', { authority: 1 })
-    .alias('plugin-request')
-    .usage('例：/插件申请 koishi-plugin-weather 想让它会查天气')
+    .command('selfext.request <name:string> [reason:text]', '申请安装一个插件（等主人确认）', { authority: 1 })
+    .alias('plugin-request', { args: [] })
+    .usage('例：/selfext.request koishi-plugin-weather 想让它会查天气')
     .action(async ({ session }, pkgName, reason) => {
-      if (!pkgName) return '要给我一个 npm 包名。先用 /插件搜索 <关键词> 找找。'
+      if (!pkgName) return '要给我一个 npm 包名。先用 /selfext.search <关键词> 找找。'
       return await fileRequest(pkgName, reason, session)
     })
 
   ctx
-    .command('插件安装 <name:string>', '安装并立刻挂载一个插件（仅主人）', { authority: 4 })
-    .alias('plugin-install')
+    .command('selfext.install <name:string>', '安装并立刻挂载一个插件（仅主人）', { authority: 4 })
+    .alias('plugin-install', { args: [] })
     .option('force', '-f  危险包也照装（描述里命中危险词时用）')
     .option('version', '-v <version:string>  指定版本')
-    .usage('例：/插件安装 koishi-plugin-weather')
+    .usage('例：/selfext.install koishi-plugin-weather')
     .action(async ({ options, session }, pkgName) => {
       if (!pkgName) return '要给我一个 npm 包名。'
       logger.info('主人 %s 请求安装 %s', session?.userId, pkgName)
@@ -509,8 +522,8 @@ function apply(ctx, config) {
     })
 
   ctx
-    .command('插件申请列表', '看有哪些还没处理的安装申请', { authority: 2 })
-    .alias('plugin-requests')
+    .command('selfext.requests', '看有哪些还没处理的安装申请', { authority: 2 })
+    .alias('plugin-requests', { args: [] })
     .action(() => {
       if (requests.length === 0) return '目前没有待处理的安装申请。'
       return requests

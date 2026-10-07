@@ -1,0 +1,12 @@
+{
+  "_说明": "极简诊断剧本：只发 3 条状态指令，看 chatluna-page 的自动出图到底在 before-send 里看到了什么。",
+  "_判据": "日志里应出现「自动出图：开，名单 N 条」以及每条消息的「before-send 判定：指令=X 名单命中=true/false」",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "user": "2791932480", "name": "绮罗星", "elements": [["text", "/emotion"]] },
+    { "wait": 6000, "user": "2791932480", "name": "绮罗星", "elements": [["text", "/guard.status"]] },
+    { "wait": 6000, "user": "2791932480", "name": "绮罗星", "elements": [["text", "/render.status"]] },
+    { "wait": 6000, "user": "2791932480", "name": "绮罗星", "elements": [["text", "/page.status"]] }
+  ]
+}

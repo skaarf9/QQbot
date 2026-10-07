@@ -1,0 +1,22 @@
+{
+  "_说明": "视觉模型的「自我识别」评测（第九轮 2026-10-04）。8 张图 = 3 张确定的自己 + 1 张存疑 + 4 张不是自己（含两张难负例：蓝发兔耳、浅蓝发校服）。每张都发 /look -f（现场重认一次），把描述和自我标记打回来。",
+  "_怎么用": "改 koishi-test/koishi.yml 里 chatluna-vision 的 selfCompare（off/text/image），清空 chatluna_image_cache，然后跑一次 rig；三次结果用 .scratch/check-61.cjs 汇总。",
+  "_判据": "off 模式：8 张里应该一张都不带 [自己]（基线，证明标记是这次新加的）；text/image 模式：eval-avatar/eval-p1/eval-p2 应带 [自己]，eval-n1~n4 不应带；禁止把 n1（蓝发兔耳）认成自己。",
+  "_调用": "node tools/run-rig.cjs 61-vision-self --settle 9000 --log .scratch/rig61-off.log",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "group": "777000561", "groupName": "视觉自我识别测试群", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/guard.allow"]] },
+    { "wait": 3000, "group": "777000561", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/look -f"], ["image", "http://127.0.0.1:3003/eval-avatar.jpg"]] },
+    { "wait": 25000, "group": "777000561", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/look -f"], ["image", "http://127.0.0.1:3003/eval-p1.png"]] },
+    { "wait": 25000, "group": "777000561", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/look -f"], ["image", "http://127.0.0.1:3003/eval-p2.png"]] },
+    { "wait": 25000, "group": "777000561", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/look -f"], ["image", "http://127.0.0.1:3003/eval-m1.png"]] },
+    { "wait": 25000, "group": "777000561", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/look -f"], ["image", "http://127.0.0.1:3003/eval-n1.png"]] },
+    { "wait": 25000, "group": "777000561", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/look -f"], ["image", "http://127.0.0.1:3003/eval-n2.png"]] },
+    { "wait": 25000, "group": "777000561", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/look -f"], ["image", "http://127.0.0.1:3003/eval-n3.png"]] },
+    { "wait": 25000, "group": "777000561", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/look -f"], ["image", "http://127.0.0.1:3003/eval-n4.png"]] },
+    { "wait": 15000, "group": "777000561", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/look"], ["image", "http://127.0.0.1:3003/eval-avatar.jpg"]] },
+    { "wait": 15000, "group": "777000561", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/routine.status"]] },
+    { "wait": 5000, "group": "777000561", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/self"]] }
+  ]
+}

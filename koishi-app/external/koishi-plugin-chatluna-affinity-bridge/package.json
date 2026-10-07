@@ -1,0 +1,21 @@
+{
+  "name": "koishi-plugin-chatluna-affinity-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "好感度垫片 + 只读的 /short 命令：① 补齐 chatluna-affinity 依赖、但这个 ChatLuna 版本里不存在的 chatluna_character 服务，让「每轮回复后记账」那条死掉的通道重新跑起来；② 提供 affinity.short（别名 /short），一眼看所有人的短期好感度存量与距折算/降级还差几点（显示值不含短期，这是唯一能看穿那层的地方）",
+  "main": "lib/index.js",
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "koishi": {
+    "description": {
+      "zh": "好感度垫片 + 只读的 /short。**垫片**：chatluna-affinity 把「每轮回复后记账（chatCount / 最近互动时间 / 连续互动天数 / 新用户建档）」挂在 `chatluna_character.getTemp` 上，而社区版 ChatLuna 1.4.0 **根本没有这个服务**（整包 grep 零命中）——于是那条通道静默死掉：生产库 chatluna_affinity_v2 的 chatCount 恒为 NULL、排行榜永远只有最早那两行、每日快照永远 0。这个插件提供最小可用的 `chatluna_character`（只有 getTemp，返回一个带 completionMessages 数组的临时对象），并在**出站咽喉**（before-send）把 bot 真正发出去的话推进那个数组 —— 于是 affinity 自己的响应处理器被正常触发，用**它自己的代码**完成建档与计数，我们不碰它的表结构。指令回执（__guardIsCommand）不计入。**/short**：显示值 = 长期 × 系数，模型每次 ±2/±3 只进 shortTermAffinity（攒到 +15 才折成长期 +3、跌到 -10 才扣 -5），所以"模型加了分但 /rank 不动"是设计如此。`/short`（原始名 affinity.short，authority 1，**只读**）把那一层摊开：所有人的短期存量 + 距折算/降级还差几点，`/short <QQ>` 看单人，`-l N` 调行数。"
+    },
+    "service": {
+      "required": [],
+      "optional": [
+        "chatluna"
+      ]
+    }
+  }
+}

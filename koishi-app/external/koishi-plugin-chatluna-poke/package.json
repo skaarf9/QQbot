@@ -1,0 +1,21 @@
+{
+  "name": "koishi-plugin-chatluna-poke",
+  "version": "0.1.0",
+  "description": "戳一戳：被戳必戳回去，并把这件事送进对话链（默认只戳不回话）",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "private": true,
+  "keywords": ["chatbot", "koishi", "plugin", "chatluna", "poke", "onebot"],
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "koishi": {
+    "description": {
+      "zh": "被戳一戳时戳回去（不强制发消息），并把该事件作为一轮看不见的对话交给模型。支持多人合并、冷却、群静默闸门。"
+    },
+    "service": {
+      "required": ["http"],
+      "optional": ["chatluna", "qqbotGuard"]
+    }
+  }
+}

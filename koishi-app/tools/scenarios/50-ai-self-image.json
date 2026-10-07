@@ -1,0 +1,42 @@
+{
+  "_说明": "验「AI 自己把内容变成图片」（chatluna-render 的 render_image 工具，第四轮）。用户问题原话：『ai自己能将自己的话变成图片吗？甚至是让ai自己输出一段html渲染成图片然后发出来，这是可能的吗？』",
+  "_判据": "① 这一步要证明的是**模型自己决定**出图，不是逻辑代码替它出图。所以只看一行新日志：`chatluna-render render_image 被模型调用：markdown / N 字符 → M 字节（454444539）`\n② 同一时刻有一条 `chatluna-render 渲染完成：markdown / N 字符 → M 字节`，而**没有**配对的 `page 出图` —— page 的自动出图走的是另一条路，两者能据此区分开\n③ 群里收到的是**图片**消息（fake-onebot 日志里 type 为 image），且它带上了 reply/@ 前缀（reply-style 打的）—— 说明这条路和普通回复走的是同一个发送通道，同样受限流约束\n④ 模型回复的文字里应当提到已经把图发出来了（工具返回值告诉它了）\n⑤ **第四步另验一条**：模型用**纯文字**写满 8 行以上时，不必它同意、也不必它调工具，page 的长文本规则会把它自动变成图片：日志「长回复出图：模型回复 → 第 1/N 页（正文 N 字符）」\n⑥ 全场景 0 条 [E]\n★ 这条要花钱（真模型调用），不是零成本剧本；允许偶尔失败 —— 模型可能犯懒直接回文字，那就是「它没调」，不是「工具坏了」，重跑一次即可。工具本身可用的确定性证据在同一剧本的第 2 步（/render.test html，零 API）",
+  "_前置": "测试实例 chatluna-render 的 toolEnabled 必须为 true（默认 false，测试台已改）；模型组 q.dialogue 的两个模型都带 tool_call 能力；预设 default-persona 的【能力边界】里已写明可以用 render_image",
+  "_跑法": "cd koishi-app && node tools\\run-rig.cjs tools\\scenarios\\50-ai-self-image.json --keep-log --settle 14000 --run 90000",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "group": "454444539", "groupName": "My Test", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/guard.allow"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/render.test html"]] },
+    {
+      "wait": 10000,
+      "group": "454444539",
+      "user": "2791932480",
+      "name": "绮罗星",
+      "elements": [
+        ["at", "2178517838"],
+        ["text", " 用 render_image 工具做一张 markdown 表格图发给我：表头「水果 / 颜色」，三行：苹果 红、香蕉 黄、橘子 橙。别用文字回复，就发图。"]
+      ]
+    },
+    {
+      "wait": 20000,
+      "group": "454444539",
+      "user": "2791932480",
+      "name": "绮罗星",
+      "elements": [
+        ["at", "2178517838"],
+        ["text", " 再用 render_image 做一张 **html** 卡片发出来：标题写「大肥鱼的能力测试」，正文一句「这段 HTML 是模型自己写的」。"]
+      ]
+    },
+    {
+      "wait": 25000,
+      "group": "454444539",
+      "user": "2791932480",
+      "name": "绮罗星",
+      "elements": [
+        ["at", "2178517838"],
+        ["text", " 最后一件事：用**纯文字**分点说说你自己——至少写满 8 行，每行一个点，别用工具、别发图。"]
+      ]
+    }
+  ]
+}

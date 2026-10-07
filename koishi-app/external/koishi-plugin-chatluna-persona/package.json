@@ -1,0 +1,27 @@
+{
+  "name": "koishi-plugin-chatluna-persona",
+  "version": "0.1.0",
+  "private": true,
+  "description": "把「自己是谁」抽成一张卡片（data/persona/self.yml），供对话/视觉/记忆/表情各阶段的模型共用",
+  "main": "lib/index.js",
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  },
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "koishi": {
+    "description": {
+      "zh": "人设卡片（self card）。过去「我是谁」只写在对话预设里，于是**同一个角色的不同阶段各说各话**：视觉模型不知道「蓝色鲸鱼娘」就是它自己（会把 bot 的形象认成别人），记忆总结模型看到「你（大肥鱼）」也不知道这个「你」指的是谁，表情包判定模型完全不知道角色的存在。这个插件从 data/persona/self.yml 读唯一的身份事实（名字 / 别名 / 形象 / 判定口径 / 口头禅 / 参考形象图），按**消费方**渲染成不同口吻：对话模型用第二人称「你」，视觉/记忆/表情这些工具模型用第三人称「大肥鱼」——避免工具模型误以为「我自己就是大肥鱼」。同时提供 {persona()} 变量（预设里用）和 /persona 指令（看当前卡片 + 各阶段实际会收到的那段话）。"
+    },
+    "service": {
+      "required": [
+        "database"
+      ],
+      "optional": [
+        "chatluna",
+        "http"
+      ]
+    }
+  }
+}

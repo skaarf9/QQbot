@@ -1,9 +1,24 @@
 // 生成测试实例的 koishi.yml（从生产配置里抄 API Key，避免手抄）
+//
+// ⚠️⚠️ 2026-10-04 警告：**这个脚本的模板已经落后于 koishi-test/koishi.yml 的真实内容**，
+//   直接运行会把手工加过的插件块整段删掉（实测：485 行 → 243 行，episode / toolbox /
+//   page / alias / watchdog / variable-extension / multi-adapter 全没了）。
+//   测试配置现在是**手工维护**的：要加插件就直接编辑 koishi-test/koishi.yml。
+//   要恢复这个脚本，得先把真实文件里缺的块逐个补进下面这个模板。
+//   ★ 唯一还值得用的是它的「同步预设 + 同步人设卡片」两段 —— 需要时单独跑最后那几行。
 const fs = require('node:fs')
 const path = require('node:path')
 
 const APP = 'D:/deepseek/QQbot/koishi-app'
 const TEST = 'D:/deepseek/QQbot/koishi-test'
+
+if (!process.argv.includes('--force')) {
+  console.error(
+    '拒绝执行：这个脚本会用过期模板覆盖 koishi-test/koishi.yml（会删掉手工加的插件块）。\n' +
+      '测试配置请直接改 koishi-test/koishi.yml；确实要覆盖就加 --force。'
+  )
+  process.exit(2)
+}
 
 const prod = fs.readFileSync(path.join(APP, 'koishi.yml'), 'utf8')
 
@@ -90,6 +105,42 @@ ${adapterBlock}
     debug: true
   chatluna-vision:aa0009:
     debug: true
+    selfAware: true
+    selfCompare: text
+  chatluna-persona:aa0024:
+    selfCardPath: data/persona/self.yml
+    reloadSeconds: 1
+    avatarSelfId: '2178517838'
+    avatarRefreshDays: 7
+    debug: true
+  chatluna-routine:aa0025:
+    enabled: true
+    tickSeconds: 30
+    catchUpMinutes: 20
+    variableName: routine
+    announceGroups: []
+    blocks:
+      - id: sleep
+        label: 睡觉
+        kind: sleep
+        start: '23:30'
+        end: '08:00'
+        enterText: 我先去睡了……别吵我。
+        exitText: 我睡醒了。
+        jitterMinutes: 25
+        quiet: true
+        announce: false
+      - id: lunch
+        label: 午饭
+        kind: meal
+        start: '12:00'
+        end: '12:40'
+        enterText: 我先去吃饭啦！这个你测一下~
+        exitText: 吃完了，回来啦。
+        jitterMinutes: 15
+        quiet: false
+        announce: false
+    debug: true
   chatluna-followup:aa0010:
     debug: true
     windowSeconds: 120
@@ -162,7 +213,7 @@ ${proactiveBlock}
     refreshSeconds: 5
     debug: true
   chatluna-affinity:aa0015:
-    scopeId: xingyuan
+    scopeId: affinity
     botSelfIds:
       - '2178517838'
     variableSettings:
@@ -177,6 +228,38 @@ ${proactiveBlock}
       enableRelationshipXmlToolCall: false
       enableUserAliasXmlToolCall: false
     debugLogging: true
+  chatluna-affinity-bridge:aa0022:
+    enabled: true
+    provideShim: true
+    minIntervalMs: 2000
+    debug: true
+  chatluna-models:aa0023:
+    enabled: true
+    pageSize: 10
+    showGroupChain: true
+    stagesCommand: true
+    debug: true
+  chatluna-mcp-client:mcp002:
+    # 联网搜索 MCP（脚本本体在 koishi-app/mcp/，测试实例复用同一份 + 同一个 SDK）
+    # ★ koishi-test/node_modules 里要能解析到这个插件；它不是 junction 而是 npm 建的真实目录，
+    #   加自研/新插件时两边都要建链接（见 docs/04 坑 63）。
+    servers: |
+      {
+        "mcpServers": {
+          "websearch": {
+            "command": "node",
+            "args": ["D:/deepseek/QQbot/koishi-app/mcp/websearch-server.cjs"],
+            "cwd": "D:/deepseek/QQbot/koishi-app",
+            "env": {
+              "HTTP_PROXY": "http://127.0.0.1:7890",
+              "HTTPS_PROXY": "http://127.0.0.1:7890",
+              "ALL_PROXY": "http://127.0.0.1:7890",
+              "NO_PROXY": "localhost,127.0.0.1,::1",
+              "NODE_PATH": "D:/deepseek/QQbot/koishi-app/node_modules"
+            }
+          }
+        }
+      }
   qqbot-auth:aa0012:
     ownerIds:
       - '2791932480'
@@ -185,7 +268,7 @@ ${proactiveBlock}
     blockedIds:
       - '10004'
     debug: true
-    affinityScopeId: xingyuan
+    affinityScopeId: affinity
     affinityPromoteAt: 51
     affinityDemoteAt: 40
   adapter-onebot:aa0011:
@@ -207,11 +290,15 @@ pkg.description = '测试实例（伪 OneBot）'
 //   照抄会得到 koishi-test\external\... 这个不存在的路径 → junction 是坏的。
 //   指向真实源码还有个好处：改插件代码两边同时生效（测试实例是 junction，不是拷贝）。
 const LOCAL_PLUGINS = [
+  'koishi-plugin-chatluna-affinity-bridge',
   'koishi-plugin-chatluna-emotion',
   'koishi-plugin-chatluna-followup',
   'koishi-plugin-chatluna-guard',
   'koishi-plugin-chatluna-local-embeddings',
+  'koishi-plugin-chatluna-models',
+  'koishi-plugin-chatluna-persona',
   'koishi-plugin-chatluna-proactive',
+  'koishi-plugin-chatluna-routine',
   'koishi-plugin-chatluna-scene',
   'koishi-plugin-chatluna-selfext',
   'koishi-plugin-chatluna-vision',
@@ -239,4 +326,20 @@ for (const name of fs.readdirSync(presetSrc)) {
   synced.push(name)
 }
 console.log('已同步预设：' + synced.join(', '))
+
+// ★ 人设卡片（data/persona/self.yml）也要同步：chatluna-persona 按**各自实例的 baseDir**
+//   去解析 selfCardPath，测试实例读的是 koishi-test/data/persona/self.yml。
+//   不同步的话测试台上"人设卡片读不到"→ 静默退回内置兜底（不会报错，但验的就不是真卡片了）。
+const personaSrc = path.join(APP, 'data', 'persona')
+const personaDst = path.join(TEST, 'data', 'persona')
+if (fs.existsSync(personaSrc)) {
+  fs.mkdirSync(personaDst, { recursive: true })
+  let n = 0
+  for (const f of fs.readdirSync(personaSrc)) {
+    if (!f.endsWith('.yml')) continue
+    fs.copyFileSync(path.join(personaSrc, f), path.join(personaDst, f))
+    n++
+  }
+  console.log(`已同步人设卡片：${n} 个文件`)
+}
 

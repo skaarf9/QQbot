@@ -1,0 +1,9 @@
+﻿{
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "group": "777000333", "groupName": "x", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/guard.allow"]] },
+    { "wait": 6000, "group": "777000333", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/page.text on"]] },
+    { "wait": 5000, "group": "777000333", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/episode.preview"]] }
+  ]
+}

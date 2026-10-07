@@ -15,6 +15,8 @@ key.txt
 *.secret
 .env
 .env.*
+!.env.example
+!.env.example.*
 
 # ---- logs & temp ----
 *.log
@@ -50,3 +52,28 @@ desktop.ini
 
 # ---- 一次性切分脚本的备份（2026-10-07 起）----
 .doc-split-backup/
+
+# ---- NapCat 运行时（QQ 框架本体，约 315 MB；新设备需单独安装，不入库）----
+NapCat.Framework/
+NapCat.Shell/
+
+# ---- 本机试跑残留的配置备份 ----
+koishi-app/.scratch-koishi.yml.bak
+*.yml.bak
+
+# ---- 模型清单 / 注册表抓取缓存（一次性，可重抓）----
+ccmodels.json
+ccmodels2.json
+registry.json
+
+# ---- 本地 AI 记忆目录（含本机绝对路径，不入库）----
+.workbuddy/
+
+# ---- 调研/探针的二进制与生成产物（源码脚本与文档仍入库）----
+_research/*.tgz
+_research/*.png
+_research/testurl.txt
+_research/imgrender/
+_research/oai_like/
+_research/pp/
+_research/render-out/

@@ -1,0 +1,34 @@
+{
+  "_说明": "第八轮四件事一起验：① /models 能翻页、且**提示里写出了翻页命令**（用户原话：『/models 命令没法翻页，提示中没有翻页的命令』——上游只写「当前为第 1 / 3 页」）；② /stages 一次列出各处理阶段用的模型（聊天/看图/记忆/把关…）；③ 好感度垫片把「bot 回了一句」记进 chatluna-affinity（新用户建档 + chatCount + 互动时间）——修复前这条通道挂在 community 版不存在的 chatluna_character 服务上，静默死掉；④ scopeId 由 xingyuan 改成 affinity 后，指令根变成 affinity.*，别名 /rank /affinity 仍然通。",
+  "_判据": "① 启动日志「指令别名层已挂载：N 个别名可用；目标缺失 0，名字冲突 0，表内重复 0」（三个 0 都要 —— 名字冲突 1 说明 `affinity` 这个别名撞上了 Commander 自动建出来的同名前缀指令，改用 favor 后才干净）；② /models 的文字里含「可用模型」与「/models 2」；③ /models -l 3 的页脚写的是「/models 2 -l 3」（页码和每页条数要一起带）；④ /models 2 -l 3 出的是第 2 页；⑤ /stages 含「各阶段模型」「主对话」「看图识别」「短期情景总结」和「会话模型：」；⑥ 日志出现「好感度记账：」= 垫片真的把出站回复喂给了 affinity；⑦ 之后 /favor 的回执里「互动统计：总计 N 次」N ≥ 1；⑧ 全场景 0 条 [E]（UNDICI / 表情包 judgeModel 之类的已知 W 不算）。",
+  "_前置": "① 测试库已经跑过 node tools\\migrate-affinity-scope.cjs --db koishi-test/data/test.db --apply（把 scopeId 从 xingyuan 改成 affinity）；② koishi-test 的预设是从生产同步过来的（{affinity(\"affinity\")}）；③ chatluna-affinity-bridge:aa0022 与 chatluna-models:aa0023 已在 koishi-test/koishi.yml 里，且 debug=true；④ 测试台的 chatluna-page.keepTextCommands 里加了 models / stages / affinity.inspect / affinity.rank（否则指令输出一律出图，判据只能看到 base64）；⑤ 两个新插件在 koishi-test/node_modules 里**也要有链接**（那个目录不是 junction，是 npm 建的真实目录）。",
+  "_跑法": "cd koishi-app && node tools\\run-rig.cjs tools\\scenarios\\58-models-stages-affinity.json --keep-log --settle 16000 --run 150000",
+  "_看日志": "node .scratch\\check-58.cjs koishi-app\\tools\\logs\\rig-58-models-stages-affinity.log",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "group": "777000560", "groupName": "模型总览测试群", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/guard.allow"]] },
+
+    { "wait": 6000, "group": "777000560", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/models"]] },
+
+    { "wait": 7000, "group": "777000560", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/models -l 3"]] },
+
+    { "wait": 7000, "group": "777000560", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/models 2 -l 3"]] },
+
+    { "wait": 7000, "group": "777000560", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/stages"]] },
+
+    { "wait": 7000, "group": "777000560", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/rank"]] },
+
+    { "wait": 7000, "group": "777000560", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/affinity"]] },
+
+    {
+      "wait": 8000,
+      "group": "777000560",
+      "user": "2791932480",
+      "name": "绮罗星",
+      "elements": [["at", "2178517838"], ["text", " 在吗？就说一句话，别用工具"]]
+    },
+
+    { "wait": 40000, "group": "777000560", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/favor 2791932480"]] }
+  ]
+}

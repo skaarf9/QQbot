@@ -1,0 +1,21 @@
+{
+  "name": "koishi-plugin-chatluna-render",
+  "version": "0.1.0",
+  "description": "结构化信息渲染：把 HTML / Markdown 渲染成图片发出去（QQ 里发不了漂亮的表格/卡片，就用图）",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "private": true,
+  "keywords": ["chatbot", "koishi", "plugin", "chatluna", "render", "html", "markdown", "image"],
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "koishi": {
+    "description": {
+      "zh": "结构化信息渲染：HTML / Markdown → 图片（给模型一个 render_image 工具，也支持在回复里放渲染块）"
+    },
+    "service": {
+      "required": [],
+      "optional": ["puppeteer", "chatluna"]
+    }
+  }
+}

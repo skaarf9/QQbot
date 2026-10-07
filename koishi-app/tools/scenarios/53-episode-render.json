@@ -1,0 +1,13 @@
+{
+  "_说明": "最小验证 {episode()}：既看真实回合有没有渲染，也用 /episode.preview 直接把渲染结果打出来（rig 里模型回合有时会被别的闸门吃掉，所以两条路都留）。",
+  "_判据": "① /episode.preview 打印出窗口条数与每一行 [HH:MM] 谁: 说了什么（这是**模型实际看到的内容**）；② koishi 日志里出现『渲染 {episode()}：… → N 条』。",
+  "_前置": "先播种：node .scratch/seed-episode.cjs seed onebot:channel:777000333 6 3 --near",
+  "_跑法": "cd koishi-app && node tools\\run-rig.cjs tools\\scenarios\\53-episode-render.json --keep-log --settle 14000 --run 60000",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "group": "777000333", "groupName": "情景记忆测试群", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/guard.allow"]] },
+    { "wait": 6000, "group": "777000333", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/episode.preview"]] },
+    { "wait": 8000, "group": "777000333", "user": "2791932480", "name": "绮罗星", "elements": [["text", "在吗，问你个事"]] }
+  ]
+}

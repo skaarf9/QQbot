@@ -1,0 +1,23 @@
+{
+  "name": "koishi-plugin-chatluna-routine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "作息表：睡觉/吃饭/摸鱼时段，转换时把「我去吃饭了」「我睡醒了」这类生活事件写进对话历史，并把当前状态注入提示词",
+  "main": "lib/index.js",
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "koishi": {
+    "description": {
+      "zh": "作息表（生活气息）。过去只有一个全局免打扰时段（quietHours 01:00-08:00）——那只是「别出声」，bot 自己并不知道自己在睡觉。这个插件把一天切成若干个**生活时段**（睡觉 / 午饭 / 晚饭 / 摸鱼…）：转换的那一刻把「我先去吃饭啦」「我睡醒了」这类话**写进情景记忆**（= 对话历史里能看到自己说过），并提供 {routine()} 变量告诉模型"现在几点、你在干嘛、是不是被硬叫醒的"。被半夜 @ 出来会不会生气，交给对话模型自己决定（不外部改情绪）。顺带给 chatluna-proactive / chatluna-followup 提供 isQuiet()：睡觉时段不主动插话、不自动跟进。"
+    },
+    "service": {
+      "required": [],
+      "optional": [
+        "chatluna",
+        "chatluna_episode",
+        "chatluna_persona"
+      ]
+    }
+  }
+}

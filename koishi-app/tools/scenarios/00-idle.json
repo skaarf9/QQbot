@@ -1,0 +1,9 @@
+{
+  "_说明": "空剧本：只把伪 OneBot 服务端立起来，一个事件都不播。用于「链路 / 断线」类测试——配合 tools\\ws-link-sim.cjs 制造干净断开与半开连接，专门验 koishi-plugin-onebot-watchdog（见 docs\\23）。",
+  "_判据": "看 koishi 侧日志里 onebot-watchdog 的 warn/info 行，以及 adapter connect to server 是否重新出现",
+  "_前置": "无需播种群，不发任何消息；测试实例的 adapter endpoint 要指向代理端口 3012 而不是 3002",
+  "_注意": "fake-onebot 的参数解析把「第一个不以 -- 开头的参数」当剧本路径，所以 --port 传值前必须先给剧本，空剧本就是干这个用的",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": []
+}

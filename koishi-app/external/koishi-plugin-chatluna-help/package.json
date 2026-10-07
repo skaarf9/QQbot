@@ -1,0 +1,21 @@
+{
+  "name": "koishi-plugin-chatluna-help",
+  "version": "0.1.0",
+  "private": true,
+  "description": "指令帮助体系：把完整的指令表按类目分级渲染成图片",
+  "main": "lib/index.js",
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "koishi": {
+    "description": {
+      "zh": "指令帮助体系：从运行期指令表里枚举**全部**指令（含第三方插件的），按类目分组、按权限分级，渲染成三级图片（总览 → 类目 → 单条）。出图复用 koishi-plugin-chatluna-page 的图片库。"
+    },
+    "service": {
+      "required": [],
+      "optional": [
+        "chatlunaPage"
+      ]
+    }
+  }
+}

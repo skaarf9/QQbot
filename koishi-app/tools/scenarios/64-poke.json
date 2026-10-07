@@ -1,0 +1,26 @@
+{
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "groupNames": { "454444539": "空弓玄天下第一！" },
+  "steps": [
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "poke": true },
+
+    { "wait": 2000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "poke": true },
+
+    { "wait": 1200, "group": "454444539", "user": "483531476", "name": "卡面来打", "poke": true,
+      "pokeText": "摸了摸他的屁股" },
+
+    { "wait": 1500, "group": "454444539", "user": "2377635116", "name": "甲", "poke": true,
+      "target": "483531476" },
+
+    { "wait": 3000, "group": "454444539", "user": "2791932480", "name": "绮罗星",
+      "elements": [["at", "2178517838"], ["text", " 在吗"]] },
+
+    { "wait": 3000, "user": "2791932480", "name": "绮罗星", "poke": true },
+
+    { "wait": 3000, "user": "2791932480", "name": "绮罗星", "poke": true },
+
+    { "wait": 4000, "user": "2791932480", "name": "绮罗星",
+      "elements": [["text", "喂"]] }
+  ]
+}

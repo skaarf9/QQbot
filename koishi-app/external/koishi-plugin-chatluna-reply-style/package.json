@@ -1,0 +1,21 @@
+{
+  "name": "koishi-plugin-chatluna-reply-style",
+  "version": "0.1.0",
+  "private": true,
+  "description": "出站消息形态：让 bot 的回复引用触发它的那条消息，并按需 @ 对方",
+  "main": "lib/index.js",
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "koishi": {
+    "description": {
+      "zh": "出站消息形态：给 bot 自己的回复补上「引用你的那条消息」和「@ 你」。QQ 里 bot 回复不引用、不 @ 人时会显得像在自言自语，群聊里尤其不知道在跟谁说话。挂在 before-send 上，一个插件覆盖所有出站路径（对话 / 主动插话 / 指令），不需要改任何上游插件。"
+    },
+    "service": {
+      "required": [],
+      "optional": [
+        "qqbotGuard"
+      ]
+    }
+  }
+}

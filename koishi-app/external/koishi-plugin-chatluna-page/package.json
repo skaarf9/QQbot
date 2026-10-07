@@ -1,0 +1,22 @@
+{
+  "name": "koishi-plugin-chatluna-page",
+  "version": "0.1.0",
+  "private": true,
+  "description": "页面化输出：把状态/说明类信息渲染成图片并缓存进一个有界的图片库",
+  "main": "lib/index.js",
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "koishi": {
+    "description": {
+      "zh": "页面化输出与图片库：给别的插件提供一个「把 Markdown 变成图片发出去」的服务，渲染结果按内容哈希缓存进有上限的图片库（LRU + TTL），并自带图片库管理指令。渲染本身复用 koishi-plugin-chatluna-render。"
+    },
+    "service": {
+      "required": [],
+      "optional": [
+        "puppeteer",
+        "chatlunaRender"
+      ]
+    }
+  }
+}

@@ -69,17 +69,12 @@ const Config = Schema.intersect([
         '★ 没写进下面「按群配置」的群怎么办。真群建议用 off —— ' +
           '活跃大群里每人各自开一个跟进窗口，叠加起来就是刷屏'
       ),
-    groupMaxPerWindow: Schema.natural()
-      .default(0)
-      .description(
-        '★ 整群熔断：同一个群在下面这个时间窗内最多自动接多少条（0 = 关）。' +
-          '上面那些上限都是「按人」算的，30 人活跃群乘起来照样能刷屏 ——' +
-          '2026-10-02 真群实测 2 分半发了 20 条、随后被腾讯限流（retcode 1200），' +
-          '就是缺这一道整群闸。'
-      ),
-    groupWindowSeconds: Schema.natural()
-      .default(60)
-      .description('整群熔断的时间窗（秒）'),
+    // ★ 2026-10-03 删掉了 groupMaxPerWindow / groupWindowSeconds / burstNotice。
+    //   整群口径的限流**只有一个地方**：chatluna-guard 的出站令牌桶。
+    //   那套固定窗口计数和令牌桶在干同一件事，却多一套参数要配、算法还更差
+    //   （固定窗口能跨边界连发 2×limit 条）。用户原话：
+    //   「我设想的仅仅是按照时间添加令牌，其他的没有额外的限制，熔断机制还有必要吗？」
+    //   —— 没必要，删了。见下面 allowByBucket()。
   }),
   Schema.object({
     groups: Schema.array(
@@ -114,6 +109,8 @@ const Config = Schema.intersect([
 /**
  * 解析某个群实际生效的参数。
  * 返回 null = 这个群不跟进（直接 SKIPPED）。
+ *
+ * 只剩三个「按人」的参数 —— 整群口径的限流不在这里，在 guard 的令牌桶。
  */
 function resolveProfile(config, profiles, guildId) {
   const globalProfile = {
@@ -182,22 +179,32 @@ function apply(ctx, config) {
   }
 
   /**
-   * 整群熔断计数器：guildId -> { count, resetAt }
-   * ★ 按人的上限挡不住"很多人各自说一句"，必须有整群口径的闸。
+   * 整群限流 = 问 guard 的出站令牌桶。
+   *
+   * ★ 2026-10-03 用户问「熔断机制还有必要吗」——没必要，删了。原来的
+   *   `groupMaxPerWindow` 固定窗口计数和 guard 的令牌桶在干同一件事，是**第二道闸**：
+   *   配两遍参数、两套口径，算法还更差（固定窗口能跨边界连发 2×limit 条）。
+   *   现在整群只有一条规则：**按时间补令牌，桶空就不接话**（用户原话）。
+   *
+   * ★ 为什么要在入站阶段问一次，而不是等 `before-send` 拦
+   *   令牌桶挂在出站，等它拦下来时模型已经跑完、钱已经花了。提前 peek 一下，
+   *   桶空了就干脆不接这句话，省掉一次白跑的模型调用。
+   *   peek **只看不扣** —— 扣令牌只有 `before-send` 那一处，两边都扣等于额度减半。
+   *
+   * ★ 拿不到 guard（没装 / 关了）→ 放行。少一道闸是"多说话"，不是"说不出话"，
+   *   出错时要往能用的方向倒。
    */
-  const burst = new Map()
-  function allowByBurst(guildId, now) {
-    const limit = Number(config.groupMaxPerWindow) || 0
-    if (limit <= 0) return true
-    const winMs = Math.max(1, Number(config.groupWindowSeconds) || 60) * 1000
-    let b = burst.get(guildId)
-    if (!b || now >= b.resetAt) {
-      b = { count: 0, resetAt: now + winMs }
-      burst.set(guildId, b)
+  function allowByBucket(session) {
+    const gid = String(session.guildId ?? session.channelId ?? '')
+    if (!gid) return true
+    try {
+      const q = ctx.get('qqbotGuard')?.bucket
+      if (!q?.peek) return true
+      return q.peek(gid) !== false
+    } catch (e) {
+      logger.warn('查令牌桶出错（放行）：%s', e.message)
+      return true
     }
-    if (b.count >= limit) return false
-    b.count += 1
-    return true
   }
 
   // 顺手清掉过期条目，别让 Map 无限长
@@ -314,17 +321,31 @@ function apply(ctx, config) {
             // 命令有自己的处理路径，不掺和
             if (context.command != null) return SKIPPED
 
-            // ---- 2.5) 整群熔断：按人算完还要看整群总额 ----
-            const gid = String(session.guildId ?? session.channelId ?? '')
-            if (!allowByBurst(gid, now)) {
+            // ---- 2.5) 整群限流：按人算完，还要看整群还发不发得出话 ----
+            //     规则只有一条：guard 的出站令牌桶（按时间补令牌）。桶空了就沉默 ——
+            //     **不发任何提示语**。用户原话：「除了命令产生的回复以及 ai 做出的回复，
+            //     我不想要逻辑代码额外产生的回复，宁愿不说话（因为人也可能断线，
+            //     但是人不会说固定的话）」。
+            if (!allowByBucket(session)) {
               log(
-                '群 %s 触发整群熔断（%ds 内最多 %d 条），跳过 %s',
-                gid,
-                config.groupWindowSeconds,
-                config.groupMaxPerWindow,
+                '群 %s 令牌桶空，本次不接话（%s）',
+                String(session.guildId ?? session.channelId ?? ''),
                 session.userId
               )
               return SKIPPED
+            }
+
+            // ---- 2.6) 作息表：睡着的时候不自动接话 ----
+            //   跟进是"bot 自己主动补一句"，属于生活气息里最不该在半夜出现的那种。
+            //   注意只在**这里**拦：被叫到时（上面那条分支）照常记窗口，只是不主动接。
+            try {
+              const routine = ctx.get('chatluna_routine')
+              if (routine && typeof routine.isQuiet === 'function' && routine.isQuiet(now)) {
+                log('作息表：现在在「%s」，不自动跟进', routine.state?.(now)?.label || '静默时段')
+                return SKIPPED
+              }
+            } catch (e) {
+              logger.debug('读作息表失败（忽略）：%s', e.message)
             }
 
             // ---- 3) 注入"@了 bot"，让 allow_reply 放行 ----
@@ -351,17 +372,27 @@ function apply(ctx, config) {
       .before('allow_reply')
 
     logger.info(
-      '群聊跟进机制已挂载（空闲 %ds / 硬上限 %ds / 最多 %d 条 / %s；按群覆盖 %d 个，未列出的群=%s；整群熔断 %s）',
+      '群聊跟进机制已挂载（空闲 %ds / 硬上限 %ds / 最多 %d 条 / %s；按群覆盖 %d 个，未列出的群=%s；' +
+        '整群限流=guard 出站令牌桶）',
       config.windowSeconds,
       config.maxSeconds,
       config.maxConsecutive,
       config.groupsOnly ? '仅群聊' : '群聊+私聊',
       profiles.size,
-      config.unlistedGroupPolicy === 'off' ? '不跟进' : '沿用全局',
-      Number(config.groupMaxPerWindow) > 0
-        ? `${config.groupWindowSeconds}s 内 ${config.groupMaxPerWindow} 条`
-        : '关'
+      config.unlistedGroupPolicy === 'off' ? '不跟进' : '沿用全局'
     )
+    if (profiles.size) {
+      for (const [gid, g] of profiles) {
+        log(
+          '  群 %s：启用=%s 空闲=%ss 硬上限=%ss 最多=%s',
+          gid,
+          g.enabled === false ? '否' : '是',
+          Number(g.windowSeconds) > 0 ? g.windowSeconds : `全局(${config.windowSeconds})`,
+          Number(g.maxSeconds) > 0 ? g.maxSeconds : `全局(${config.maxSeconds})`,
+          Number(g.maxConsecutive) >= 0 ? g.maxConsecutive : `全局(${config.maxConsecutive})`
+        )
+      }
+    }
   })
 
   // 人工看一眼当前有哪些人处于跟进窗口内

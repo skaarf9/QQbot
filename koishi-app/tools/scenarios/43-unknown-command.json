@@ -1,0 +1,16 @@
+{
+  "_说明": "验「未知指令兜底」（chatluna-help 新增）。起因是 2026-10-03 生产实测：用户在群里发 /ext —— 那是总览表里的**类目代号**不是指令名，Koishi 解析不到、自带 suggest 也匹配不上，于是整条漏给 ChatLuna，模型回了句「这命令不是给我的吧，群里就我们俩」。用户体感就是「命令没有效果」。",
+  "_判据": "① /ext → 收到「没有 /ext 这个指令 —— ext 是类目代号…想看这一类：发 /help ext」，日志出现「未知指令兜底：ext → 回提示」\n② /zzzznope → 收到「没有 /zzzznope 这个指令」，同样有兜底日志\n③ /help basic → **仍然正常出图**（真指令不能被抢），日志有「自动出图：help」\n④ /hel → **不要**兜底（有指令名以 hel 开头，交给 Koishi 自己的「你是不是想输入 help」）\n⑤ 未放行的群 888000111 里发 /ext → **一个字都不回**（被屏蔽的群不该因为敲错指令就出声）\n⑥ /自定义中文指令 → **不要**兜底（不像指令名，是自然语言）\n⑦ 全场景 0 条 [E]",
+  "_前置": "测试实例 chatluna-guard：defaultPolicy=silent、allowGroups 为空 → 第一步先用主人身份把 454444539 放行，否则整群静默看不到任何回执",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "group": "454444539", "groupName": "My Test", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/guard.allow"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["at", "2178517838"], ["text", " /ext"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/zzzznope"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/help basic"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/hel"]] },
+    { "wait": 6000, "group": "888000111", "groupName": "未放行的群", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/ext"]] },
+    { "wait": 8000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/自定义中文指令"]] }
+  ]
+}

@@ -27,6 +27,14 @@
  * elements 支持：[type, value] 或 [type, value, extra]
  *   at / text / image / reply / face / forward
  *
+ * 戳一戳步骤（2026-10-05 加）：
+ *   { "wait": 1000, "group": "454444539", "user": "2791932480", "name": "测试员",
+ *     "poke": true,                       // 发一条 notice/notify/poke，不是 message
+ *     "target": "2178517838",             // 被戳的人，默认 = bot 自己
+ *     "pokeText": "摸了摸他的屁股" }        // 自定义文案，默认 "戳了戳"
+ *   伪服务端会把 `group_poke` / `friend_poke` 记成 `📤 BOT 👉 戳了 …`，
+ *   "bot 有没有戳回去"就看这一行。
+ *
  * 注意：这个脚本只负责"喂"和"看"。它不判断对错，判断交给你（或我）读日志。
  */
 
@@ -81,8 +89,11 @@ const NICKNAME = scenario.nickname ?? '大肥鱼'
 // 场景里出现过的「QQ 号 → 昵称」，供 get_group_member_info / _list 用
 // （有些插件会先拉成员列表，比如 chatluna-affinity 的 /好感度排行）
 const memberNames = new Map()
+// 群名片（card）单独一张表：剧本里给 step.card 才填。用来验证"插件到底读的是昵称还是群名片"。
+const memberCards = new Map()
 for (const step of scenario.steps ?? []) {
   if (step.user != null) memberNames.set(String(step.user), step.name ?? String(step.user))
+  if (step.card != null) memberCards.set(String(step.user), String(step.card))
 }
 memberNames.set(SELF_ID, NICKNAME)
 
@@ -120,7 +131,8 @@ function nextId() {
 function buildMessage(elements) {
   const segs = []
   const raw = []
-  for (const [type, value, extra] of elements) {
+  // 戳一戳步骤没有 elements（`{ "poke": true }` 不需要正文），这里宽容处理
+  for (const [type, value, extra] of elements ?? []) {
     if (type === 'at') {
       segs.push({ type: 'at', data: { qq: String(value) } })
       raw.push(`[CQ:at,qq=${value}]`)
@@ -199,13 +211,27 @@ function handleApi(msg) {
       })
     }
 
+    case 'get_group_info': {
+      // ★ 有的插件（比如 chatluna-toolbox 的 {groupInfo()} 变量）每次请求都会拉群信息。
+      //   不实现的话它会走 default 分支拿到 {}，然后渲染成"未能获取当前群信息"，
+      //   于是"变量到底注入成功没有"就分不清了。
+      const gid = String(params.group_id)
+      return reply(echo, {
+        group_id: +gid,
+        group_name: scenario.groupNames?.[gid] ?? 'My Test',
+        member_count: memberNames.size,
+        max_member_count: 500,
+        create_time: Math.floor(Date.now() / 1000) - 86400 * 365,
+      })
+    }
+
     case 'get_group_member_info': {
       const uid = String(params.user_id)
       const name = memberNames.get(uid) ?? uid
       return reply(echo, {
         user_id: +uid,
         nickname: name,
-        card: '',
+        card: memberCards.get(uid) ?? '',
         role: uid === SELF_ID ? 'admin' : 'member',
         sex: 'unknown',
         age: 0,
@@ -245,6 +271,18 @@ function handleApi(msg) {
       return reply(echo, { message_id: id })
     }
 
+    // ★ 戳一戳的三个 action（NapCat 也都有同名实现：NapCat.Shell/napcat.mjs:40362-40383）。
+    //   打一行显眼的日志是本分支存在的主要理由 —— "bot 到底有没有戳回去"全靠它判定。
+    case 'group_poke':
+    case 'friend_poke':
+    case 'send_poke': {
+      const target = params.user_id ?? params.target_id
+      const where = params.group_id ? `群${params.group_id}` : '私聊'
+      say(`📤 BOT 👉 戳了 ${where} 的 ${target}`)
+      apiLog.push({ action: 'poke', params })
+      return reply(echo, {})
+    }
+
     default:
       return reply(echo, {})
   }
@@ -271,6 +309,46 @@ async function runScenario() {
       segs,
       raw,
     })
+
+    // ★ 戳一戳（`{ "poke": true }`）：不产生 message 事件，只发一条 notice。
+    //   形状按 NapCat 实际发出的来（NapCat.Shell/napcat.mjs:70335-70375 的 Dge/Oge 两类）：
+    //     · 私聊：没有 group_id，target_id = 对方（也就是 bot）
+    //     · 群聊：有 group_id，target_id = 被戳的人（★ 判"戳的是不是 bot"只能看这个字段）
+    //   raw_info 里 type:'nor' 的 txt 就是"戳一戳"的显示文案，用户改过就是用户那句。
+    if (step.poke) {
+      const targetId = step.target != null ? +step.target : +SELF_ID
+      const text = step.pokeText != null ? String(step.pokeText) : '戳了戳'
+      const event = {
+        post_type: 'notice',
+        notice_type: 'notify',
+        sub_type: 'poke',
+        self_id: +SELF_ID,
+        time: Math.floor(Date.now() / 1000),
+        user_id: +step.user,
+        target_id: targetId,
+        raw_info: [
+          { col: '1', nm: '', type: 'qq', uid: 'u_fake_poker' },
+          {
+            jp: 'https://zb.vip.qq.com/v2/pages/nudgeMall?_wv=2&actionId=0',
+            src: 'http://tianquan.gtimg.cn/nudgeaction/item/0/expression.jpg',
+            type: 'img',
+          },
+          { txt: text, type: 'nor' },
+          { col: '1', nm: '', tp: '0', type: 'qq', uid: 'u_fake_target' },
+          { txt: '', type: 'nor' },
+        ],
+      }
+      if (isGroup) {
+        event.group_id = +step.group
+        event.sender_id = +step.user
+      }
+      say(
+        `📥 第${i + 1}步 → ${isGroup ? `群${step.group}` : '私聊'} 里 ${step.name ?? step.user} 戳了 ${targetId}` +
+          (text !== '戳了戳' ? `（文案：${text}）` : '')
+      )
+      ws.send(JSON.stringify(event))
+      continue
+    }
 
     const event = {
       post_type: 'message',

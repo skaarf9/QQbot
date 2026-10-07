@@ -1,0 +1,25 @@
+{
+  "_说明": "验「指令驱动的回复不占出站配额」（用户 2026-10-03 要求：这种命令应全都不占配额才对，因为是命令驱动的）。做法：先在群里把 bot 放行（否则整群静默，走的是另一条闸门），然后**连发 6 条指令**把令牌桶打空 —— 测试实例的桶容量是 burst=3。",
+  "_判据": "outboundExemptCommands=true  → 6 条指令**全部**有回执，日志出现「指令输出不占配额：<指令名>」；\n          outboundExemptCommands=false → 只有前 3 条有回执，后 3 条被「出站超速，丢弃一条」丢掉。\n         两次都不要出现 [E]。",
+  "_前置": "测试实例 chatluna-guard：outboundEnabled=true、outboundBurst=3（全局）、outboundGroups 为空；\n          454444539 初始不在 allowGroups 里（默认静默），第一步用主人身份 /guard.allow 放行",
+  "_注意": "① 指令之间 wait 必须是 0，否则桶按每分钟 12 条（每 5 秒回 1 个）自己补回来，打不空；\n          ② 渲染每张图 ~200ms，6 条连发总耗时约 2 秒，仍在「不补充」的窗口内",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    {
+      "wait": 0,
+      "group": "454444539",
+      "groupName": "My Test",
+      "user": "2791932480",
+      "name": "绮罗星",
+      "elements": [["text", "/guard.allow"]]
+    },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/help"]] },
+    { "wait": 0, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/guard.status"]] },
+    { "wait": 0, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/emotion"]] },
+    { "wait": 0, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/render.status"]] },
+    { "wait": 0, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/vision.stat"]] },
+    { "wait": 0, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/followup"]] },
+    { "wait": 12000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/page.status"]] }
+  ]
+}

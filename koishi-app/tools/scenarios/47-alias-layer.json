@@ -1,0 +1,22 @@
+{
+  "_说明": "验「指令别名抽象层」（chatluna-alias 新增 + chatluna-help 首页改版）。用户原话：『现在的命令列表的命令有前缀，有的甚至使用的发 xingyuan 这个过时的名称前缀……给当前的命令抽象一层：只有那些可能经常用到的命令才列出来；只显示别名（英文，一个单词，不重复）；命令也是使用斜杠加别名的方式调用；同时保留一个查看原有命令的参数，比如 -all』",
+  "_判据": "① 启动日志「指令别名层已挂载：N 个别名可用；目标缺失 0，名字冲突 0，表内重复 0」—— 两个 0 是关键，说明表里每一条都真的挂上去了\n② 启动日志「常用别名层就绪：N 个别名（/help 首页只列这些）」\n③ /text on（走别名 page.text）生效后，/help 出的是**文字**：含「常用指令」「/model」「/help -all」，且**不含**「xingyuan.」——首页只给别名，不给原始命名空间前缀\n④ /help -all 文字含「全部指令」和「类目」（原来的全量总览还在）\n⑤ /help chat 文字里同一条指令既有别名又有原名：`/model` 与 `chatluna.use.model` 同现\n⑥ /help model 文字含「原名」与「chatluna.use.model」—— 抽象层的映射看得见\n⑦ /model 真的走到 chatluna.use.model（返回它自己的「需要指定模型」文案，不是「没有这个指令」）\n⑧ /models 列出模型（带参数的转发路径也通）\n⑨ /moods、/me 各回各的\n⑩ **分页**：/help 2 出的是常用页第 2 页；/help chat 2 出的是类目页第 2 页（★ 这两条是第一轮就带着的 bug：`[target:string]` 贪婪，`/help chat 2` 原来会回「找不到 chat 2」）\n⑪ 全场景 0 条 [E]",
+  "_前置": "测试实例 chatluna-guard：defaultPolicy=silent、allowGroups 为空 → 第一步先用主人身份把 454444539 放行，否则整群静默看不到任何回执",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "group": "454444539", "groupName": "My Test", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/guard.allow"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/text on"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/help"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/help -all"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/help chat"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/help model"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/model"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/models"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/moods"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/me"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/help 2"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/help chat 2"]] },
+    { "wait": 8000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/page.text off"]] }
+  ]
+}

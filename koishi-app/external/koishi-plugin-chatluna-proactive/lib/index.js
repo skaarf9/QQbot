@@ -56,6 +56,12 @@ const CONTINUE = 2
 /** 每个群历史池里最多留几张图的字节（防止长时间跑把内存吃满） */
 const MAX_POOL_IMAGE_BYTES = 4 * 1024 * 1024
 const MAX_POOL_IMAGES = 6
+/** 热度时间戳最多留这么多条（90s 窗口最多也只需要几十条，够用又不涨内存） */
+const HEAT_MAX = 240
+/** 话题黑名单的判定窗口：只看最近这么多条非 direct 消息（"现在在聊什么"） */
+const SKIP_TOPIC_WINDOW = 6
+/** 闸门拒绝后池子截到只剩这么多条（留个上下文，别让下一轮瞎判） */
+const KEEP_AFTER_SKIP = 3
 
 const DEFAULT_ACTIVITY_PROMPT = [
   '【自动插话】群里的消息你一直在看着，现在轮到你说点什么了（不是有人叫你，是你自己想插一句）。',
@@ -67,7 +73,9 @@ const DEFAULT_ACTIVITY_PROMPT = [
   '上面的消息都不是在跟你说话。你只要判断一件事：这个话题你有没有想插一句的。',
   '想插话就只回你要说的那句话本身——短、口语、像群里的人随口接的一句，符合你平时的说话风格。',
   '不要 @ 任何人，不要复述别人说了什么，不要用"我注意到你们在聊"这种开场，不要解释你在做什么。',
-  '实在没什么想说的，就回一句极短的附和（比如"草"、"确实"、"?"），别硬找话题。',
+  '★ 但**前提是你真的看懂了**：如果这波话题靠的是太新或太专的信息（电竞赛事与比赛进程、直播、',
+  '实时比分、选手操作、股票行情这类），你并没有可靠来源，接了必然是外行话——',
+  '那就**只输出 [SKIP]**，别硬接，也别用"确实""草""?"这种空洞附和凑数。',
 ].join('\n')
 
 const DEFAULT_IDLE_PROMPT = [
@@ -81,7 +89,76 @@ const DEFAULT_IDLE_PROMPT = [
   '只回你要说的那句话本身，短一点、自然一点，像群里的人随口说的；',
   '不要像客服一样问候，不要问"大家在忙什么""有人吗"这种空话，也不要 @ 任何人。',
   '如果上面什么都没聊过，就随便说一句你此刻在想的事。',
+  '★ 但如果上面聊的是你根本插不进去的领域（电竞赛事、直播、行情这类太新太专的东西），',
+  '那就**只输出 [SKIP]**——冷场不是你的责任，硬起话头更尴尬。',
 ].join('\n')
+
+/**
+ * 插话把关提示词（第六轮追加）。
+ *
+ * 用户原话：「插入对话前需要能够理解对话再插入，不然会出现**牛头不对马嘴**的情况，
+ *   群在聊电竞的时候**直接不插入**，因为电竞信息太新了，即使是提供网页搜索也不可能明白」。
+ *
+ * 设计要点：
+ *   - **默认是不说话**：只有"真看懂 + 有具体的话可接"才放行；
+ *   - 明确点名"太新或太专"的领域（电竞赛事、直播、实时比分、行情、突发新闻）——
+ *     bot 没有可靠来源，接了必然是外行话；
+ *   - 输出只有两种、各一行，好解析：`SPEAK: …` / `SKIP: …`；
+ *   - 解析不出来时**按 SKIP 处理**（宁可少说）。
+ */
+const DEFAULT_JUDGE_PROMPT = [
+  '你在替一个 QQ 群里的机器人【把关】：它现在想主动插一句话，你判断该不该让它说。',
+  '',
+  '当前时间：{date} {time}',
+  '群聊名称：{group_name}',
+  '它上次说话之后，群里聊的是这些：',
+  '{history}',
+  '',
+  '**只有同时满足下面两条，才允许它开口**：',
+  '1. 你真的看懂了这波在聊什么——能一句话说清"大家在聊哪件事、聊到哪一步"；',
+  '2. 有一句**具体**的话可接：接梗、给判断、答问题、补充信息都算。',
+  '',
+  '**出现下面任何一条，一律不许开口**：',
+  '- 话题靠的是**太新或太专**的信息：电竞赛事与比赛进程、直播、实时比分、选手操作与战术、',
+  '  股票行情、体育比分、突发新闻——它没有可靠来源，接了必然是外行话、马后炮；',
+  '- 你只是"大概知道在聊什么"，说不出具体能接哪一句；',
+  '- 你唯一能想到的只是"确实""草""?""笑死"这种没有信息量的附和；',
+  '- 大家在聊私事、或者在跟某个特定的人说话，插进去是打扰；',
+  '- 记录里没有实质内容（只有表情、图片、单字、@）。',
+  '',
+  '宁可不说，也不要为了刷存在感硬接一句。',
+  '',
+  '只输出下面两种之一，**一行，不要解释、不要多余的话**：',
+  'SPEAK: <你想让它说的那句话本身>',
+  'SKIP: <不超过 15 字的理由>',
+].join('\n')
+
+/**
+ * 话题关键词黑名单（零成本硬拦：连判定模型都不调）。
+ *
+ * ★ 为什么有了判定模型还要这个：用户明确要求「群在聊电竞的时候**直接**不插入」——
+ *   "直接"是硬要求，交给模型判就有失手率，这里按关键词确定性拦掉。
+ * ★ 词表刻意**不放单字缩写**（瓦 / 狙 / jee 这种）：中文单字会误伤
+ *   （"瓦"会命中"瓦斯""瓦片"），这类交给判定模型按上下文判。
+ * ★ 匹配规则：纯拉丁/数字词按词边界（`VCT` 不会命中 `VCTF`），含中文/其它字符的词按包含匹配。
+ */
+const DEFAULT_SKIP_TOPICS = [
+  '电竞',
+  '比赛',
+  '赛事',
+  '比分',
+  '战队',
+  '选手',
+  '直播',
+  '排位',
+  '上分',
+  'VCT',
+  'LPL',
+  'KPL',
+  'Valorant',
+  '瓦罗兰特',
+  '天禄',
+]
 
 const Config = Schema.intersect([
   Schema.object({
@@ -118,6 +195,36 @@ const Config = Schema.intersect([
       .default(DEFAULT_IDLE_PROMPT)
       .description('空闲触发的提示词。可用变量同上'),
   }),
+  Schema.object({
+    judgeEnabled: Schema.boolean()
+      .default(true)
+      .description(
+        '插话把关（第六轮）：真的开口之前，先让一个便宜模型判断"这波话题是否真看懂、是否真有话可接"。' +
+          '判定为不可接就**直接放弃**，不烧主模型。默认开'
+      ),
+    judgeModel: Schema.string()
+      .default('cc/q.memory')
+      .description('把关用的模型。默认走免费档（`cc/q.memory`），拿不到就退到默认对话模型'),
+    judgeTimeoutMs: Schema.natural()
+      .role('ms')
+      .default(30000)
+      .description('把关调用的超时。★ 超时/报错一律**按不可接处理**（宁可少说）'),
+    judgeSkipSeconds: Schema.natural()
+      .default(240)
+      .description('把关判定"不可接"之后，多少秒内不再重复判定（防止每 5 秒问一次模型）'),
+    judgePrompt: Schema.string()
+      .role('textarea', { rows: [12, 26] })
+      .default(DEFAULT_JUDGE_PROMPT)
+      .description('把关提示词。可用变量：{history} {time} {date} {group_name} {user_name} {idle_minutes}'),
+    skipTopics: Schema.array(Schema.string())
+      .role('table')
+      .default(DEFAULT_SKIP_TOPICS)
+      .description(
+        '话题关键词黑名单：命中就**完全不插话**（零模型成本，连把关都不调）。' +
+          '纯拉丁/数字词按词边界匹配，含中文的词按包含匹配。' +
+          '默认拦掉电竞/赛事/实时比分这类"太新太专、接了必然外行"的话题'
+      ),
+  }).description('插话把关（理解之后再开口）'),
   Schema.object({
     groups: Schema.array(
       Schema.object({
@@ -174,6 +281,21 @@ function formatDate(d) {
 }
 
 /**
+ * 元素标记 → 纯文本。只给兜底路径用（正常路径走下面逐元素翻译，翻得更准）。
+ *
+ * ★ 兜底**不能**直接退回 `session.content`（坑 58）：那是**元素标记**不是文字 ——
+ *   图片消息会是 `<img src="https://…rkey=…" summary="" file="…" sub-type="0"/>`。
+ *   原样用有两个后果：提示词里塞进带签名的长 URL；话题黑名单拿它当正文匹配，
+ *   图片链接里凑巧出现 `lpl`/`vct` 这种子串就会**误判成在聊电竞**而闭嘴。
+ */
+function stripMarkup(text) {
+  return String(text ?? '')
+    .replace(/<img\b[^>]*\/?>/gi, '[图片]')
+    .replace(/<at\b[^>]*\bid="?(\d+)"?[^>]*\/?>/gi, '@$1')
+    .replace(/<(\/?[a-z][a-z0-9-]*)\b[^>]*\/?>/gi, '')
+}
+
+/**
  * 把一条消息压成一行纯文本。
  * 不直接用 session.content：那种"元素转文本"的结果对图片/表情/@ 的处理不好控，
  * 我们这里图片单独走 imgs，正文里只留文字与 @。
@@ -185,9 +307,12 @@ function plainTextOf(session) {
     if (el.type === 'text') parts.push(el.attrs?.content ?? '')
     else if (el.type === 'at') parts.push(`@${el.attrs?.name || el.attrs?.id || '某人'}`)
     else if (el.type === 'face') parts.push('[表情]')
+    else if (el.type === 'img' || el.type === 'image') parts.push('[图片]')
+    else if (el.type === 'video') parts.push('[视频]')
+    else if (el.type === 'audio' || el.type === 'record') parts.push('[语音]')
   }
   const text = parts.join('').trim()
-  return text || (session.content || '').trim()
+  return text || stripMarkup(session.content).trim()
 }
 
 /** 这条消息里的图片 URL（Koishi 的 img 元素属性名可能是 src / url / file） */
@@ -328,6 +453,8 @@ function apply(ctx, config) {
   const states = new Map()
 
   const quietRange = parseQuietHours(config.quietHours)
+  /** 上次因为"作息表说在睡觉"而闭嘴的日志时间（节流用） */
+  let quietLoggedAt = 0
 
   /** 指令前缀（`/` `.`）：指令消息不进历史池，也不算群活跃度 */
   const prefixes = (() => {
@@ -341,7 +468,20 @@ function apply(ctx, config) {
   function poolOf(guildId) {
     let p = pools.get(guildId)
     if (!p) {
-      p = { msgs: [], lastSession: null, lastMessageAt: 0, lastGuildId: guildId, groupName: '' }
+      p = {
+        msgs: [],
+        // ★ 群聊"热度"时间戳，专门喂给 activityScore。
+        //   为什么不直接用 msgs 算：msgs 的语义是"**bot 上次说话之后**群里聊了什么"，
+        //   每轮正常回复都会被 proactive-pool-reset 清空（那是设计如此：别重复作答）。
+        //   而活跃度衡量的是"这个群现在热不热"，跟 bot 看没看过无关 ——
+        //   2026-10-03 的实测里，一群人在刷屏、中途 @ 了 bot 一句，池子立刻清零，
+        //   热度跟着归零，于是那一波最该插话的时候分数永远起不来。
+        heat: [],
+        lastSession: null,
+        lastMessageAt: 0,
+        lastGuildId: guildId,
+        groupName: '',
+      }
       pools.set(guildId, p)
     }
     return p
@@ -403,8 +543,126 @@ function apply(ctx, config) {
       .replaceAll('{idle_minutes}', String(idleMinutes))
   }
 
-  /** 真正开口 */
-  async function speak(guildId, kind, profile, state, pool) {
+  // ---------------------------------------------------------------- 插话把关（第六轮）
+
+  /** 已经打过"把关模型就绪"日志的模型名（避免每轮刷屏） */
+  const loggedJudgeModels = new Set()
+
+  function escapeRe(s) {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  }
+
+  /**
+   * 话题黑名单硬拦。命中返回命中的那个词，否则 null。
+   * 只看"不是在跟 bot 说话"的消息（direct 的不算话题），**且只看最近几条**。
+   *
+   * ★ 为什么必须限定窗口（rig 55 第一次跑就打脸了）：一开始拿整个历史池去匹配，
+   *   结果"比分"这两个字一旦出现，**在池子被清空之前每一轮都命中**——
+   *   群里早就换话题了，bot 还在因为十分钟前的一句"看比分好像是2-0了"闭嘴。
+   *   语义应该是"**现在**在聊这个话题"，不是"**聊过**这个话题"。
+   */
+  function hitSkipTopic(pool) {
+    const list = (config.skipTopics || []).map((s) => String(s ?? '').trim()).filter(Boolean)
+    if (!list.length) return null
+    const recent = pool.msgs.filter((m) => !m.direct).slice(-SKIP_TOPIC_WINDOW)
+    const text = recent
+      .map((m) => m.content || '')
+      .join('\n')
+      .toLowerCase()
+    if (!text) return null
+    for (const raw of list) {
+      const k = raw.toLowerCase()
+      // 纯拉丁/数字词按词边界：`VCT` 不该命中 `VCTF`，也不该命中 `xxvct`
+      if (/^[a-z0-9]+$/.test(k)) {
+        if (new RegExp(`(^|[^a-z0-9])${escapeRe(k)}([^a-z0-9]|$)`, 'i').test(text)) return raw
+      } else if (text.includes(k)) {
+        return raw
+      }
+    }
+    return null
+  }
+
+  /**
+   * 闸门拒绝之后把池子截短。
+   *
+   * 池子的语义是"**下一次插话要看的材料**"。已经看过、判过、决定不说的东西留着，
+   * 只会带来两个坏处：① 旧话题永久毒化后面的每一次判断（上面那个坑）；
+   * ② 每轮都把同样的内容再喂给把关模型，白花调用。
+   * 留最后几条是为了让下一轮**不是瞎判**（至少知道上一句在说什么）。
+   */
+  function trimPoolAfterSkip(pool) {
+    if (pool.msgs.length > KEEP_AFTER_SKIP) {
+      pool.msgs = pool.msgs.slice(-KEEP_AFTER_SKIP)
+    }
+  }
+
+  /**
+   * 调一次把关模型拿纯文本（带超时）。
+   *
+   * ★ 两个必须记住的 API 事实（episode 插件第一次写错过，rig 报 `model.invoke is not a function`）：
+   *   1. `chatluna.createChatModel(name)` 是 **async** 的，要 await；
+   *   2. 它返回的是**响应式 ref**，真模型在 `.value` 上。
+   */
+  async function invokeJudgeModel(prompt) {
+    const chatluna = ctx.chatluna
+    if (!chatluna || typeof chatluna.createChatModel !== 'function') {
+      throw new Error('chatluna 服务不可用')
+    }
+    const names = [config.judgeModel, chatluna.config?.defaultModel].filter(Boolean)
+    let lastError = '没有可用的模型名'
+    for (const name of names) {
+      try {
+        const ref = await chatluna.createChatModel(name)
+        const model = ref?.value
+        if (!model || typeof model.invoke !== 'function') {
+          lastError = `${name} 拿不到可用模型`
+          continue
+        }
+        const timeout = config.judgeTimeoutMs
+        let timer
+        const response = await Promise.race([
+          model.invoke(prompt, { timeout }),
+          new Promise((_, reject) => {
+            timer = setTimeout(() => reject(new Error('把关超时')), timeout)
+          }),
+        ]).finally(() => clearTimeout(timer))
+        let text = typeof response === 'string' ? response : response?.content
+        if (Array.isArray(text)) {
+          text = text.map((c) => (typeof c === 'string' ? c : c?.text || '')).join('')
+        }
+        text = String(text || '').trim()
+        if (!text) throw new Error('把关模型返回空')
+        if (!loggedJudgeModels.has(name)) {
+          loggedJudgeModels.add(name)
+          logger.info('插话把关模型就绪：%s', name)
+        }
+        return text
+      } catch (e) {
+        lastError = `${name}: ${e.message}`
+      }
+    }
+    throw new Error(lastError)
+  }
+
+  /**
+   * 让把关模型判一次。返回 `{ speak, reason, draft }`。
+   * ★ 解析不出来时**按不可接处理**（宁可少说）。
+   */
+  async function judgeInterjection(pool, kind, idleMinutes) {
+    const prompt = renderPrompt(config.judgePrompt, pool, idleMinutes, kind === 'idle')
+    const text = await invokeJudgeModel(prompt)
+    const m = /^\s*(SPEAK|SKIP)\s*[:：]\s*([\s\S]*)$/i.exec(text)
+    if (!m) {
+      return { speak: false, reason: `把关输出无法解析：${text.replace(/\s+/g, ' ').slice(0, 60)}` }
+    }
+    if (m[1].toUpperCase() === 'SPEAK') {
+      return { speak: true, draft: m[2].replace(/\s+/g, ' ').trim().slice(0, 120) }
+    }
+    return { speak: false, reason: m[2].replace(/\s+/g, ' ').trim().slice(0, 60) || '（没给理由）' }
+  }
+
+  /** 真正开口。`detail` 只用于日志：把"为什么决定插话"写清楚（分数/阈值/条数/安静多久） */
+  async function speak(guildId, kind, profile, state, pool, detail) {
     if (state.locked) return false
     // R15：被屏蔽的群连"想说话"都不该想。链闸门（guard 插件）也能拦住，
     // 但那会白烧一次模型调用，所以这里先问一句。
@@ -416,10 +674,66 @@ function apply(ctx, config) {
       log('群 %s 还没有可用的 session，跳过', guildId)
       return false
     }
+    // ★ 这一行**不随 debug 开关**：主动插话一天也就几次，"到底判没判它插话、
+    //   是按什么判的"必须能在日志里一眼看到（排查"插话频率太低"时全靠它）。
+    //   放在两道 early-return 之后：否则被屏蔽的群会每 5 秒刷一行。
+    logger.info(
+      '决定插话（%s）：群 %s%s',
+      kind === 'idle' ? '空闲触发' : '活跃度触发',
+      guildId,
+      detail ? `｜${detail}` : ''
+    )
     state.locked = true
     try {
       const now = Date.now()
       const idleMinutes = Math.floor((now - (pool.lastMessageAt || now)) / 60000)
+
+      // ---------------- 第六轮：插话前两道闸（"理解之后再开口"） ----------------
+
+      // 闸 A：话题黑名单（零成本硬拦）。用户要求「群在聊电竞的时候**直接**不插入」，
+      //       这种"直接"必须是确定性的，不能交给模型判。
+      const topic = hitSkipTopic(pool)
+      if (topic) {
+        state.cooldownUntil = Date.now() + config.judgeSkipSeconds * 1000
+        state.msgCount = 0
+        trimPoolAfterSkip(pool)
+        logger.info(
+          '放弃插话：命中话题黑名单「%s」（%d 秒内不再试）',
+          topic,
+          config.judgeSkipSeconds
+        )
+        return false
+      }
+
+      // 闸 B：把关模型判"是否真看懂、是否真有话可接"。
+      //       用便宜模型（默认免费档）先挡一次，避免拿 1 万 token 的主链去试探。
+      if (config.judgeEnabled) {
+        let verdict
+        try {
+          verdict = await judgeInterjection(pool, kind, idleMinutes)
+        } catch (e) {
+          // ★ 把关失败**按不可接处理**：没确认看懂就不开口。
+          state.cooldownUntil = Date.now() + config.failureCooldownSeconds * 1000
+          logger.warn('插话把关调用失败，这次不插话：%s', e.message)
+          return false
+        }
+        if (!verdict.speak) {
+          state.cooldownUntil = Date.now() + config.judgeSkipSeconds * 1000
+          state.msgCount = 0
+          trimPoolAfterSkip(pool)
+          logger.info(
+            '放弃插话：把关判定不可接（%s）｜%d 秒内不再试',
+            verdict.reason,
+            config.judgeSkipSeconds
+          )
+          return false
+        }
+        logger.info(
+          '把关通过，可以接：%s',
+          verdict.draft ? `草稿「${verdict.draft}」` : '（没给草稿）'
+        )
+      }
+
       const template = kind === 'idle' ? config.idlePrompt : config.activityPrompt
       const text = renderPrompt(template, pool, idleMinutes, kind === 'idle')
       const els = [h.text(text)]
@@ -433,10 +747,43 @@ function apply(ctx, config) {
       }
       const session = createProactiveSession(pool.lastSession, text, els)
       const msgCount = pool.msgs.length
-      await ctx.chatluna.chatChain.receiveCommand(session, '', {
-        message: els,
-        is_proactive: true,
-      })
+      // ★ 先跟出站整形打个招呼：这一轮是"我自己想插一句"，不是回复谁 ——
+      //   让 reply-style 别加引用/@（否则频道兜底会随便挑一条群消息挂上，
+      //   还会 @ 一个没跟 bot 说话的群友，见 docs/04 坑 53）。
+      //   ★ 用 `ctx.reflect.get('replyStyle')` 而不是 `ctx.replyStyle`：
+      //     后者在服务没注册时每次访问都会打一条
+      //     `property replyStyle is not registered, declare it as inject` 警告
+      //     （`@cordisjs/core/lib/index.cjs:284`）；而写进 `inject.optional` 又要
+      //     赌"服务不存在时插件照样加载"，插话是主功能，不值得为一行日志赌这个。
+      const replyStyle = () => {
+        try {
+          return ctx.reflect?.get?.('replyStyle') ?? null
+        } catch {
+          return null
+        }
+      }
+      // 120s 只是**兜底**（真出事时窗口不会一直挂着）；正常情况下下面 finally 里会收到 10s
+      try {
+        replyStyle()?.suppress?.(guildId, 120000)
+      } catch (e) {
+        logger.warn('通知 replyStyle 失败（不影响插话）：%s', e.message)
+      }
+      try {
+        await ctx.chatluna.chatChain.receiveCommand(session, '', {
+          message: els,
+          is_proactive: true,
+        })
+      } finally {
+        // ★ 这一轮的话已经发出去了（`request_conversation completed` 在发送之后），
+        //   就赶紧把窗口收窄到 10 秒 —— 否则接下来的两分钟里，**同频道的正常回复**
+        //   也会被一起放过（实测 2026-10-03 18:16 那次插话之后，18:17 的两条正常回复
+        //   就白白丢了引用/@）。留 10 秒是给可能的分条/补充消息兜底。
+        try {
+          replyStyle()?.suppress?.(guildId, 10000)
+        } catch {
+          /* 收窄失败无所谓：120s 的兜底还在 */
+        }
+      }
       state.lastTriggerAt = Date.now()
       state.msgCount = 0
       state.failures = 0
@@ -497,6 +844,11 @@ function apply(ctx, config) {
             pool.msgs = pool.msgs.slice(-config.historyLimit)
           }
           rememberImages(pool, pool.msgs.length - 1, imageUrlsOf(session))
+          // 热度只收"不是在跟 bot 说话"的消息，且**永不被清池影响**（见 poolOf 的注释）
+          if (!msg.direct) {
+            pool.heat.push(msg.ts)
+            if (pool.heat.length > HEAT_MAX) pool.heat = pool.heat.slice(-HEAT_MAX)
+          }
           const state = stateOf(guildId)
           state.msgCount += 1
           if (state.threshold == null) state.threshold = profile.activityThreshold
@@ -517,6 +869,23 @@ function apply(ctx, config) {
     const now = Date.now()
     const nowDate = new Date(now)
     if (inQuietHours(quietRange, nowDate)) return
+    // ★ 作息表（chatluna-routine）：睡觉时段不主动开口。
+    //   和 quietHours 的分工：quietHours 是"这个钟点别出声"（纯时间规则），
+    //   作息表是"bot 现在在睡觉"这个**状态**，还会把「我先去睡了」写进它自己的记忆。
+    //   两者不冲突 —— 谁命中都闭嘴，用户只配一个也行。
+    try {
+      const routine = ctx.get('chatluna_routine')
+      if (routine && typeof routine.isQuiet === 'function' && routine.isQuiet(now)) {
+        // 每 10 分钟最多说一次，免得秒级轮询把日志刷爆
+        if (!quietLoggedAt || now - quietLoggedAt > 600000) {
+          quietLoggedAt = now
+          logger.info('作息表：现在在「%s」，不主动开口', routine.state?.(now)?.label || '静默时段')
+        }
+        return
+      }
+    } catch (e) {
+      logger.debug('读作息表失败（忽略）：%s', e.message)
+    }
     for (const [guildId, profile] of profiles) {
       const pool = pools.get(guildId)
       const state = stateOf(guildId)
@@ -524,10 +893,11 @@ function apply(ctx, config) {
       if (now < state.cooldownUntil) continue
       if (state.lastTriggerAt && now - state.lastTriggerAt < config.cooldownSeconds * 1000) continue
 
-      // 叫 bot 的那些消息不算"群聊热度"（它们已经被正常回复过了）
+      // 叫 bot 的那些消息不算"群聊热度"（它们已经被正常回复过了）。
+      // ★ 热度用 pool.heat（清池也不会掉），不用 pool.msgs —— 原因见 poolOf 的注释。
       const eligible = pool.msgs.filter((m) => !m.direct)
-      if (profile.enableActivity && eligible.length > 0) {
-        const score = activityScore(eligible.map((m) => m.ts), now)
+      if (profile.enableActivity && pool.heat.length > 0) {
+        const score = activityScore(pool.heat, now)
         const threshold = thresholdOf(state, profile)
         const byScore = score >= threshold
         const byCount =
@@ -537,16 +907,26 @@ function apply(ctx, config) {
         if (config.debug && (!state.lastEvalLogAt || now - state.lastEvalLogAt > 60000)) {
           state.lastEvalLogAt = now
           log(
-            '群 %s 活跃度 %s / 阈值 %s（候选 %d 条，计 %d 条）',
+            '群 %s 活跃度 %s / 阈值 %s（热度 %d 条，待插话 %d 条，计 %d 条）',
             guildId,
             score.toFixed(3),
             Number(threshold).toFixed(3),
+            pool.heat.length,
             eligible.length,
             state.msgCount
           )
         }
         if (byScore || byCount) {
-          void speak(guildId, 'activity', profile, state, pool)
+          void speak(
+            guildId,
+            'activity',
+            profile,
+            state,
+            pool,
+            `${byScore ? '分数达标' : '条数兜底'}｜活跃度 ${score.toFixed(3)} / 阈值 ${Number(
+              threshold
+            ).toFixed(3)}，热度 ${pool.heat.length} 条，待插话 ${eligible.length} 条`
+          )
           continue
         }
       }
@@ -554,7 +934,14 @@ function apply(ctx, config) {
       if (profile.enableIdle) {
         const anchor = Math.max(pool.lastMessageAt || 0, state.lastTriggerAt || 0)
         if (anchor && now - anchor >= profile.idleMinutes * 60000) {
-          void speak(guildId, 'idle', profile, state, pool)
+          void speak(
+            guildId,
+            'idle',
+            profile,
+            state,
+            pool,
+            `已安静 ${Math.floor((now - anchor) / 60000)} 分钟（阈值 ${profile.idleMinutes} 分钟）`
+          )
         }
       }
     }
@@ -617,12 +1004,29 @@ function apply(ctx, config) {
     return [
       `群 ${guildId}：`,
       `  历史池 ${pool?.msgs?.length ?? 0} 条（上限 ${config.historyLimit}）`,
+      `  群聊热度 ${pool?.heat?.length ?? 0} 条（清池不会掉，活跃度就是按它算的）`,
+      `  待插话 ${(pool?.msgs ?? []).filter((m) => !m.direct).length} 条｜其中在跟 bot 说话的 ${
+        (pool?.msgs ?? []).filter((m) => m.direct).length
+      } 条`,
       `  距上次发言 ${last}`,
       `  上次发言距今 ${state.lastTriggerAt ? Math.round((now - state.lastTriggerAt) / 1000) + ' 秒' : '—'}，冷却 ${config.cooldownSeconds} 秒`,
       `  失败退避剩余 ${cd} 秒，连续失败 ${state.failures} 次`,
       `  当前活跃度阈值 ${thresholdOf(state, profile).toFixed(3)}`,
+      `  条数兜底：累计 ${state.msgCount} / ${profile.activityMessageInterval} 条`,
       `  免打扰时段：${config.quietHours || '关'}${inQuietHours(quietRange, new Date()) ? '（★ 现在正在免打扰里，不会开口）' : ''}`,
+      `  作息表：${(() => {
+        try {
+          const r = ctx.get('chatluna_routine')
+          if (!r) return '没装 chatluna-routine'
+          const s = r.state?.()
+          return `${s?.label || '醒着'}${s?.quiet ? '（★ 静默时段，不开口）' : ''}`
+        } catch {
+          return '读不到'
+        }
+      })()}`,
       `  空闲触发：${profile.enableIdle ? `${profile.idleMinutes} 分钟` : '关'}`,
+      `  插话把关：${config.judgeEnabled ? `开（${config.judgeModel}，判不可接后静默 ${config.judgeSkipSeconds} 秒）` : '关'}`,
+      `  话题黑名单 ${(config.skipTopics || []).length} 个词：${(config.skipTopics || []).slice(0, 8).join(' / ')}${(config.skipTopics || []).length > 8 ? ' …' : ''}`,
     ].join('\n')
   })
 

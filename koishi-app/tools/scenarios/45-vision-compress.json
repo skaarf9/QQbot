@@ -1,0 +1,15 @@
+{
+  "_说明": "验「压缩阈值」（chatluna-vision 2026-10-03 修）。用户原话：'我怀疑图片压缩会对所有大小的图片起作用(应该是超过大小的才压缩)，导致图片没有正确理解到' —— 用户是对的：旧实现无条件 sharp().resize().jpeg(q85)，实测一张 123KB 的表情包也被压成 78KB。",
+  "_判据": "阈值 256KB / 长边 1024：\n  tiny-800.png   24KB  800×600  → 「★ 未压缩，原样送模型」\n  mid-1000.jpg   62KB 1000×800  → 「★ 未压缩，原样送模型」\n  noise-1k.png 2349KB 1000×800  → 「已压缩」（字节超阈值）\n  long-2400.jpg 300KB 2400×1800 → 「已压缩」（长边超限）\n四个都**不调用模型**，所以本场景零 API 消耗。",
+  "_前置": "先跑 `node .scratch/make-test-images.cjs` 生成 .scratch/img/*（路径写死在步骤里）",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "group": "454444539", "groupName": "My Test", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/guard.allow"]] },
+    { "wait": 5000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/vision.probe D:/deepseek/QQbot/.scratch/img/tiny-800.png"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/vision.probe D:/deepseek/QQbot/.scratch/img/mid-1000.jpg"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/vision.probe D:/deepseek/QQbot/.scratch/img/noise-1k.png"]] },
+    { "wait": 8000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/vision.probe D:/deepseek/QQbot/.scratch/img/long-2400.jpg"]] },
+    { "wait": 8000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/vision.stat"]] }
+  ]
+}

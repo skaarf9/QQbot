@@ -1,0 +1,19 @@
+{
+  "_说明": "验「长文本自动出图 + 分页翻页」（chatluna-page 第四轮新增）。用户原话：『群聊中的回复有一部分仍是大段文字，将其图片化吧；数据太多可以分页，指令上添加数字则翻页，类似 /help 那样』",
+  "_判据": "① 启动日志「长文本出图：开｜名单外指令 也出图（短于 1 字符留文字，留文字名单 cmdname.scan/page.text/chatluna.model.list）｜模型长回复 出图（≥180 字符或 ≥6 行，仅群聊）｜超 30 字符分页，翻页 /more」\n   （测试台把 pageMaxChars 压到 30、minImageChars 压到 1、并把 chatluna.model.list 放进留文字名单，才验得动这么小的输出）\n② **名单外的指令也出图**（用户抱怨的那条不一致）：/presets（chatluna.preset.list，不在 autoRenderCommands 里）→ 日志「指令自动出图：chatluna.preset.list → 第 1/N 页」，群里收到的是**图片**\n③ **留文字名单真的拦得住**：/models（chatluna.model.list，在留文字名单里）**仍然是文字** —— 它的输出只有 14 字符，靠 minImageChars=1 才排除了\"本来就短\"这个解释，所以这条真的验到了名单；日志里没有任何 chatluna.model.list 的出图记录\n④ **分页 + 翻页**：/guard.limit（44 字符，超 30 → 2 页）→ 「第 1/2 页」，页脚写着 /more 2；接着 /more 2 → 日志「分页查看：第 2/2 页」并再发一张图\n⑤ **不带数字 = 下一页**，到末页则夹住不报错：再发一次 /more → 仍是「第 2/2 页」\n⑥ **带数字可以跳页**：/think（109 字符 → 6 页）后发 /more 3 → 「第 3/6 页」\n⑦ 全场景 0 条 [E]",
+  "_前置": "测试实例 chatluna-guard：defaultPolicy=silent、allowGroups 为空 → 第一步先用主人身份把 454444539 放行。测试台 page 配置见 koishi-test/koishi.yml：pageMaxChars=30、minImageChars=40（生产是 1200 / 40）",
+  "_跑法": "cd koishi-app && node tools\\run-rig.cjs tools\\scenarios\\49-longtext-pager.json --keep-log --settle 14000 --run 70000",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "group": "454444539", "groupName": "My Test", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/guard.allow"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/presets"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/models"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/guard.limit"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/more 2"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/more"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/think"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/more 3"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/think"]] }
+  ]
+}

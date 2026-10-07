@@ -1,0 +1,33 @@
+{
+  "_说明": "验「bot 自己说的话真的进了短期情景记忆（chatluna_episode）」+「bot 自己发的图只留文字占位、不再把 <img> 标记当元素发出去」。起因：核对用户的问题『bot 不会解析自己发的图』时顺手查库，发现 chatluna_episode 里 isBot=1 的记录是 **0 条**、历次日志里『其中 bot 自己 N 条』也全是 0 —— 出站咽喉（before-send）因为 session.uid 形状写错（两段式 vs 三段式）从来没通过一条（坑 59）。",
+  "_判据": "① 日志出现『记录出站消息：onebot:channel:777000557 ｜元素 N 个（图 M）｜content 字段=…｜入库=…』（修复前一条都不会有）；② 入库文本是**模型回复的正文**（含 <p> 里的字 —— 必须递归取 children 才拿得到），并且**没有**把用户刚说的话记成 bot 说的；③ 模型调 render_image 那次：『（图 1）』、入库文本以 @… 开头、**不含 <img**；④ /mem（episode.preview）这条出站消息里出现『你（大肥鱼）:』（bot 自己进了近况），且正文没有 <img、没有 multimedia.nt.qq.com 这类签名 URL、元素数=1（纯文本，没被当成图片元素）。",
+  "_前置": "测试台自带 chatluna-episode:aa0032（storeScopes=allow、windowMessages=6、debug=true）。★ 一样要**先把 episode.preview 加进 chatluna-page:pg0001.keepTextCommands**（koishi-test/koishi.yml），否则 /mem 的输出会被 page 渲染成图片、判据 ④ 没法验。★ __guardIsCommand 标记会让**指令输出**（/guard.allow、/mem 的回执）不出现在出站记录里 —— 这是刻意的（否则模型每轮都会读到上一次的记忆转储，越滚越大），所以本剧本用**普通聊天**（@bot）产生出站消息。★ 群号每次要用**全新的**：老群里模型记得上一轮已经发过图，会拒绝再发（第二次跑就吃了这个亏）。",
+  "_跑法": "cd koishi-app && node tools\\run-rig.cjs tools\\scenarios\\57-episode-outbound.json --keep-log --settle 16000 --run 120000",
+  "_看日志": "node .scratch\\check-57.cjs koishi-app\\tools\\logs\\rig-57-episode-outbound.log",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "group": "777000557", "groupName": "出站记忆测试群", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/guard.allow"]] },
+
+    {
+      "wait": 7000,
+      "group": "777000557",
+      "user": "2791932480",
+      "name": "绮罗星",
+      "elements": [["at", "2178517838"], ["text", " 在吗？随便聊一句就行，别用工具"]]
+    },
+
+    {
+      "wait": 26000,
+      "group": "777000557",
+      "user": "2791932480",
+      "name": "绮罗星",
+      "elements": [
+        ["at", "2178517838"],
+        ["text", " 用 render_image 做一张卡片发我，标题写「出站测试」，正文一句「这张图是我自己发的」。别用文字回答。"]
+      ]
+    },
+
+    { "wait": 22000, "group": "777000557", "user": "2791932480", "name": "绮罗星", "elements": [["at", "2178517838"], ["text", " /mem"]] }
+  ]
+}

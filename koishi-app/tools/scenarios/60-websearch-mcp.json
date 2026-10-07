@@ -1,0 +1,35 @@
+{
+  "_说明": "第八轮 · 联网搜索 MCP：验证 chatluna-mcp-client（v1.3.4）+ 自研 koishi-app/mcp/websearch-server.cjs 真的连上、工具真的注册进模型可调用列表、并且模型真的会去调。搜索走 Bing（cn.bing.com 的 RSS），抓回来的网页先简化成正文再喂模型。",
+  "_判据": "① 启动日志「MCP client initialized successfully with N tool(s) available」且 N ≥ 4；② 日志出现 MCP 服务器自己的 stderr（`[websearch]` 前缀：initialize / tools/list / web_search q=… hits=…）；③ 模型至少真的调了一次 web_search 或 web_search_read（日志里能看到 `[websearch] web_search`）；④ bot 的回复里出现搜索结果里的关键词（说明它真的读到了内容，不是编的）；⑤ 全场景 0 条 [E]。",
+  "_前置": "koishi-test/koishi.yml 里有 chatluna-mcp-client:mcp002:（servers 是 JSON 字符串，env 显式带代理 —— MCP SDK 在 Windows 上不继承 HTTP_PROXY）；koishi-test/node_modules 里链接了 koishi-plugin-chatluna-mcp-client；koishi-app/mcp/websearch-server.cjs 存在。",
+  "_跑法": "cd koishi-app && node tools\\run-rig.cjs tools\\scenarios\\60-websearch-mcp.json --keep-log --settle 20000 --run 160000",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "group": "777000562", "groupName": "联网搜索测试群", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/guard.allow"]] },
+
+    {
+      "wait": 8000,
+      "group": "777000562",
+      "user": "2791932480",
+      "name": "绮罗星",
+      "elements": [
+        ["at", "2178517838"],
+        ["text", " 用 web_search 搜一下「Koishi 是什么」，然后用一句话告诉我结论。别编，搜不到就说搜不到。"]
+      ]
+    },
+
+    {
+      "wait": 60000,
+      "group": "777000562",
+      "user": "2791932480",
+      "name": "绮罗星",
+      "elements": [
+        ["at", "2178517838"],
+        ["text", " 再用 web_browse 看看 https://example.com/ 这一页正文写了什么，原样告诉我一句。"]
+      ]
+    },
+
+    { "wait": 50000, "group": "777000562", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/favor 2791932480"]] }
+  ]
+}

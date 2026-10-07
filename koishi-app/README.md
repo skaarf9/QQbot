@@ -161,18 +161,31 @@ Get-ChildItem node_modules -Recurse -Directory -Filter core |
 
 ## 两个「看着像故障、其实无害」的报错
 
-跑起来后一定会看到这两条，**都不用管**：
+> ⚠️ **2026-10-06 更正**：下面第 1 条**不再成立**。`PacketBackend` 挂掉时"收消息/发消息"
+> 确实照常，但**戳一戳（`send_poke`/`group_poke`）、私聊文件直链**这类能力会直接失效，
+> 而且不抛错、只在 action 回包里带 `retcode 1400`。详见
+> [docs/04-踩坑记录.md 坑 8](../docs/04-踩坑记录.md)。现在本机 QQ 是 `9.9.33-52230`
+> （在 NapCat 4.18.30 的表内），报错已消失。
 
-**1. NapCat 控制台：**
+~~跑起来后一定会看到这两条，**都不用管**：~~
+
+**1. NapCat 控制台（已过期，勿照抄）：**
 
 ```
 [error] [Core] [Packet] PacketBackend 不支持当前QQ版本架构：9.9.36-53644-x64
 ```
 
-这是 NapCat 的**包级 hook** 认不出你的 QQ 版本，会退回元素级 API。功能正常——
-[NapCatQQ issue #1048](https://github.com/NapNeko/NapCatQQ/issues/1048) 报的是同一个错，报告者原话是「**但是实际上功能是正常的**」，该 issue 以 0 回复关闭。实测本机在报这条错的情况下 `get_login_info` 正常返回 `{"online":true,"good":true}`。
+~~这是 NapCat 的**包级 hook** 认不出你的 QQ 版本，会退回元素级 API。功能正常——~~
+旧结论的依据是 `get_login_info` 正常返回，**但它根本不走 PacketBackend**，所以证明不了什么。
+真正的判据是直接打一次走 PacketBackend 的 action：
 
-**真要根治**只有降级 PC 端 QQ（NapCat 4.18.28 的版本表支持到 `9.9.35-52892`，你的 `9.9.36-53644` 正好超出一档），但没必要——因为不影响用。
+```powershell
+node ..\tools\napcat-probe.cjs call group_poke '{"group_id":454444539,"user_id":2791932480}'
+```
+
+`status: ok` 才算真正常。**根治就是换一个在 NapCat 版本表里的 QQ 构建号**（别再信
+"没必要降级"）：表里有多少个、最高到哪，直接读 `NapCat.Shell\napcat.mjs`。
+本机 4.18.30 的表最高到 `9.9.36-53489`；`9.9.36-53644` 恰好超出，所以当时失败。
 
 **2. NapCat 控制台：**
 

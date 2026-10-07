@@ -1,0 +1,35 @@
+{
+  "_说明": "验证【spacebunny 当主对话模型】。判据两条：① 测试实例日志里出现 `route ok: q.dialogue -> stealth/space-bunny-alpha`（说明队列真的把主对话路由到了免费模型）；② 群里拿到的是**成句的角色回复**而不是报错/空回（说明它扛得住这个预设的长系统提示词 + 工具指令）。第三步故意要求它调用工具（affinity_affinity / memory_add），用来压 spacebunny 的 tool_call 能力——它要是不会调工具，这个项目就不能用它当主对话。",
+  "_前置": "koishi-test/koishi.yml 里 chatluna-multi-adapter:aa0031（platform=cc，走**真实** commandcode 上游）已配好，defaultModel=cc/q.dialogue；测试群 777000111 已在 qqbot_guard 里放行。",
+  "_跑法": "node tools\\run-rig.cjs tools\\scenarios\\38-spacebunny-dialogue.json --keep-log --run 70000  （注意：**不加** --upstream，要打真实上游）",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "groupNames": { "777000111": "兜底测试群" },
+  "steps": [
+    {
+      "wait": 0,
+      "group": "777000111",
+      "groupName": "兜底测试群",
+      "user": "2791932480",
+      "name": "测试员",
+      "card": "测试员本员",
+      "elements": [["at", "2178517838"], ["text", " 你好，随便聊两句吧"]]
+    },
+    {
+      "wait": 25000,
+      "group": "777000111",
+      "user": "2791932480",
+      "name": "测试员",
+      "card": "测试员本员",
+      "elements": [["at", "2178517838"], ["text", " 记住我最喜欢吃火锅，以后可以问我"]]
+    },
+    {
+      "wait": 25000,
+      "group": "777000111",
+      "user": "2791932480",
+      "name": "测试员",
+      "card": "测试员本员",
+      "elements": [["at", "2178517838"], ["text", " 给我加5点好感度，理由是我请你吃了火锅"]]
+    }
+  ]
+}
