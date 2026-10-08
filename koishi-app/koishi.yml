@@ -17,7 +17,11 @@ plugins:
       endpoint: https://koishi-registry.yumetsuki.moe/index.json
   database-sqlite:w4sj7r:
     path: data/koishi.db
-  commands:4v63gn: {}
+  commands:4v63gn:
+    vision.this:
+      config:
+        permissions:
+          - authority:1
   admin:6lt8ix: {}
   puppeteer:ppt001:
     headless: true
@@ -520,8 +524,9 @@ plugins:
     quote: first
     mention: first
     mentionInDirect: false
-    maxAgeSeconds: 180
+    maxAgeSeconds: 45
     skipCommands: true
+    skipBroadcasts: true
     debug: false
   chatluna-alias:als001:
     enabled: true
@@ -630,6 +635,31 @@ plugins:
     logRemoved: true
     debug: false
   chatluna-sandbox:sbx001: {}
+  game-auto:ga0001:
+    minAuthority: 4
+    allowGroups: []
+    notifyPrefix: '[游戏自动化]'
+    debug: true
+    maaEnabled: true
+    maaExePath: F:\MAA\MAA.exe
+    maaGetTaskPath: /maa/getTask
+    maaReportStatusPath: /maa/reportStatus
+    maaLaunchIfDown: true
+    maaCheckEmulator: true
+    maaLaunchEmulator: true
+    maaEmulatorExePath: D:\Program Files\Netease\MuMu\nx_main\MuMuManager.exe
+    maaEmulatorVmIndex: '0'
+    maaEmulatorAdb: 127.0.0.1:16384
+    maaEmulatorWaitSeconds: 180
+    maaDispatchTimeoutMinutes: 5
+    endfieldEnabled: false
+    endfieldExePath: D:\MaaEnd-win-x86_64-v2.3.0\MaaEnd.exe
+    endfieldMxuConfigPath: D:\MaaEnd-win-x86_64-v2.3.0\config\mxu-MaaEnd.json
+    endfieldInstanceName: 全套日常
+    endfieldHost: 127.0.0.1
+    endfieldPort: 12701
+    endfieldRestartIfRunning: false
+    toolEnabled: true
   onebot-singleton-guard:sgd001:
     enabled: true
     enforce: true
@@ -668,3 +698,11 @@ plugins:
     quietDefaultText: true
     blockToolboxPokeTool: true
     debug: false
+  steam-friend-status-fork:hovovd:
+    SteamApiKey: ${{ env.STEAM_API_KEY }}
+    interval: 300
+    useSteamName: true
+    broadcastWithImage: true
+    useProxy: true
+    proxyUrl: http://127.0.0.1:7890
+    maxRetries: 3

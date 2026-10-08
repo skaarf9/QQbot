@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="panel-token" content="__PANEL_TOKEN__" />
+    <title>QQbot 控制面板 · Koishi + NapCat</title>
+    <!-- 内联图标：不引外部文件，省掉浏览器对 /favicon.ico 的那次 404（控制台保持干净） -->
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='25' font-size='24'%3E%F0%9F%94%A7%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="/assets/style.css" />
+  </head>
+  <body>
+    <div class="glow"></div>
+
+    <header class="top">
+      <div class="brand">
+        <div class="logo">QQ</div>
+        <div>
+          <h1>QQbot 控制面板</h1>
+          <p class="sub">Koishi + NapCat 一键启停 · 日志 · 登录二维码</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button id="btn-start-all" class="btn primary">▶ 一键启动全部</button>
+        <button id="btn-stop-all" class="btn danger-ghost">■ 全部停止</button>
+        <button id="btn-exit" class="btn ghost" title="只关掉这个面板，不停 Koishi / NapCat">⏻ 退出面板</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="cards">
+        <!-- Koishi -->
+        <article class="card" id="card-koishi">
+          <div class="card-head">
+            <span class="dot" data-dot="koishi"></span>
+            <a class="card-title" data-link="koishi" target="_blank" rel="noreferrer" title="打开 Koishi 控制台">Koishi</a>
+            <span class="pill" data-pill="koishi">未知</span>
+          </div>
+          <dl class="kv">
+            <div><dt>PID</dt><dd data-kv="koishi-pid">—</dd></div>
+            <div><dt>运行时长</dt><dd data-kv="koishi-uptime">—</dd></div>
+            <div><dt>控制台端口</dt><dd data-kv="koishi-port">—</dd></div>
+            <div><dt>OneBot 链路</dt><dd data-kv="koishi-onebot">—</dd></div>
+          </dl>
+          <div class="card-foot">
+            <label class="chk" title="传给 run-prod.cjs --log-level 3，能看到入站消息与出站请求的细节">
+              <input type="checkbox" id="koishi-debug" /> debug 日志
+            </label>
+            <label class="chk" title="run-prod.cjs --takeover：启动前把连着 NapCat 的旧实例/孤儿一起收掉（避免每条命令回答两次）">
+              <input type="checkbox" id="koishi-takeover" checked /> 接管旧实例
+            </label>
+            <span class="spacer"></span>
+            <button class="btn" data-act="koishi-start">启动</button>
+            <button class="btn" data-act="koishi-restart">重启</button>
+            <button class="btn danger-ghost" data-act="koishi-stop">停止</button>
+          </div>
+          <div class="links">
+            <a data-link="koishi" target="_blank" rel="noreferrer">↗ http://127.0.0.1:5140</a>
+            <a href="#" data-open-folder="koishiLogs">📁 日志目录</a>
+          </div>
+        </article>
+
+        <!-- NapCat -->
+        <article class="card" id="card-napcat">
+          <div class="card-head">
+            <span class="dot" data-dot="napcat"></span>
+            <a class="card-title" data-link="napcat" target="_blank" rel="noreferrer" title="打开 NapCat WebUI（链接里自带 token，点开即登录）">NapCat</a>
+            <span class="pill" data-pill="napcat">未知</span>
+          </div>
+          <dl class="kv">
+            <div><dt>QQ 进程</dt><dd data-kv="napcat-qq">—</dd></div>
+            <div><dt>运行时长</dt><dd data-kv="napcat-uptime">—</dd></div>
+            <div><dt>WebUI 端口</dt><dd data-kv="napcat-webui-port">—</dd></div>
+            <div><dt>OneBot 端口</dt><dd data-kv="napcat-onebot-port">—</dd></div>
+          </dl>
+          <div class="card-foot wrap">
+            <label class="chk" title="两个变体都要管理员、都会启动并注入你已装的 QQ（区别只在注入方式）">
+              版本
+              <select id="napcat-variant">
+                <option value="shell">Shell（NapCatWinBootMain 注入）</option>
+                <option value="framework">Framework（napimain 原生注入）</option>
+              </select>
+            </label>
+            <label class="chk" title="等价于 launcher 的 -q <QQ号>：免扫码快速登录（历史登录过才有效）">
+              快速登录
+              <input type="text" id="napcat-quick" placeholder="QQ 号（可空）" inputmode="numeric" />
+            </label>
+            <span class="spacer"></span>
+            <button class="btn" data-act="napcat-start">启动</button>
+            <button class="btn" data-act="napcat-restart">重启</button>
+            <button class="btn danger-ghost" data-act="napcat-stop">停止</button>
+            <button class="btn ghost" data-act="napcat-start-console" title="开一个真实控制台窗口，跑 tools\start-napcat-*.bat 自己的提权流程（和你双击脚本一模一样）。面板那条 UAC 提权没反应时用它">控制台启动</button>
+            <button class="btn ghost" data-act="napcat-reset" title="提权进程卡住不动时，用它把提权进程收掉并清掉「启动中」状态">复位</button>
+          </div>
+          <p class="hint" id="napcat-hint">启动需要管理员权限（会弹 UAC）——NapCat 要往 QQ.exe 里注入。</p>
+          <p class="hint" id="napcat-conflict"></p>
+          <div class="links">
+            <a data-link="napcat" target="_blank" rel="noreferrer">↗ NapCat WebUI（免 token 登录）</a>
+            <a href="#" data-copy="napcat-token">🔑 复制 token</a>
+            <a href="#" data-open-folder="napcatLogs">📁 日志目录</a>
+            <a href="#" data-copy="napcat-cmd">📋 复制手动启动命令</a>
+          </div>
+        </article>
+      </section>
+
+      <section class="split">
+        <!-- 登录 / 二维码 -->
+        <article class="card login" id="card-login">
+          <div class="card-head">
+            <span class="dot" data-dot="login"></span>
+            <h2 class="card-title">QQ 登录状态</h2>
+            <span class="pill" data-pill="login">—</span>
+          </div>
+          <div class="qr-wrap">
+            <img id="qr-img" alt="NapCat 登录二维码" />
+            <div class="qr-empty" id="qr-empty">还没有二维码<br /><small>NapCat 未运行，或已经登录</small></div>
+          </div>
+          <div class="qr-meta">
+            <div id="login-phase" class="phase">—</div>
+            <div id="login-age" class="age"></div>
+            <div id="login-error" class="err"></div>
+          </div>
+          <div class="card-foot wrap">
+            <button class="btn" data-act="qr-refresh" title="调用 NapCat WebUI 的 RefreshQRcode">↻ 刷新二维码</button>
+            <button class="btn" data-act="napcat-relogin" title="重启 NapCat 内核，让它重新走一遍登录流程">⤾ 重新登录</button>
+            <a class="btn" data-link="napcat" target="_blank" rel="noreferrer">↗ 去 NapCat 登录页</a>
+          </div>
+          <p class="hint">
+            二维码是 NapCat 自己写在 <code>cache/qrcode.png</code> 的那张图，面板盯着它的 mtime 自动换图；
+            掉登录时 NapCat 会重新生成，这里也会跟着变。
+          </p>
+        </article>
+
+        <!-- 日志 -->
+        <article class="card logs">
+          <div class="card-head">
+            <h2 class="card-title">日志</h2>
+            <div class="tabs" id="log-tabs">
+              <button class="tab active" data-service="koishi">Koishi</button>
+              <button class="tab" data-service="napcat">NapCat</button>
+            </div>
+            <span class="spacer"></span>
+            <span class="stream-state" id="stream-state">未连接</span>
+          </div>
+
+          <div class="log-toolbar">
+            <select id="log-source" title="日志来源"></select>
+            <div class="levels" id="log-levels">
+              <button class="chip active" data-lvl="all">全部</button>
+              <button class="chip" data-lvl="info">info</button>
+              <button class="chip" data-lvl="warn">warn</button>
+              <button class="chip" data-lvl="error">error</button>
+              <button class="chip" data-lvl="debug">debug</button>
+            </div>
+            <input type="search" id="log-search" placeholder="过滤关键字…（空格分隔 = 全部命中）" />
+            <label class="chk"><input type="checkbox" id="log-autoscroll" checked /> 自动滚动</label>
+            <label class="chk"><input type="checkbox" id="log-wrap" /> 换行</label>
+            <span class="spacer"></span>
+            <button class="btn ghost" id="log-clear">清屏</button>
+            <button class="btn ghost" id="log-export">导出</button>
+          </div>
+
+          <div class="log-view" id="log-view" tabindex="0"></div>
+          <div class="log-status">
+            <span id="log-count">0 行</span>
+            <span id="log-source-label"></span>
+            <span class="spacer"></span>
+            <span id="log-scan">—</span>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <div id="toasts" class="toasts"></div>
+
+    <!-- 二次确认对话框 -->
+    <dialog id="confirm-dialog">
+      <h3 id="confirm-title">确认</h3>
+      <p id="confirm-text"></p>
+      <div class="dialog-foot">
+        <button class="btn ghost" id="confirm-cancel">取消</button>
+        <button class="btn danger" id="confirm-ok">确认</button>
+      </div>
+    </dialog>
+
+    <script src="/assets/app.js"></script>
+  </body>
+</html>

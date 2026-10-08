@@ -1,0 +1,21 @@
+{
+  "name": "koishi-plugin-game-auto",
+  "version": "0.1.0",
+  "description": "游戏日常自动化：把本机 MAA（明日方舟）与 MaaEnd（终末地）接进 bot，群里说一句就跑，跑完回报",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "private": true,
+  "keywords": ["chatbot", "koishi", "chatluna", "maa", "maaend", "arknights", "endfield", "automation"],
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  },
+  "koishi": {
+    "description": {
+      "zh": "游戏日常自动化：MAA 远程控制端点 + MaaEnd Web API 客户端 + 指令与 ChatLuna 工具（仅主人可用）"
+    },
+    "service": {
+      "required": ["server"],
+      "optional": ["chatluna"]
+    }
+  }
+}

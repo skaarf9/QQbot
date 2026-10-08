@@ -43,6 +43,9 @@ models/
 # ---- 调研/探针临时目录（抓下来的 registry、npm tarball 等）----
 .scratch/
 
+# ---- 一键启动面板的运行时状态（.runtime/panel：提权包装器、NapCat 控制台捕获、state.json）----
+.runtime/
+
 # ---- editor / OS ----
 .vscode/
 .idea/

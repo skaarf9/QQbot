@@ -282,6 +282,33 @@ plugins:
     affinityScopeId: affinity
     affinityPromoteAt: 51
     affinityDemoteAt: 40
+  game-auto:ga0001:
+    minAuthority: 4
+    allowGroups: []
+    notifyPrefix: '[游戏自动化]'
+    debug: true
+    maaEnabled: true
+    maaExePath: F:\MAA\MAA.exe
+    maaGetTaskPath: /maa/getTask
+    maaReportStatusPath: /maa/reportStatus
+    maaToken: testtoken123
+    maaLaunchIfDown: false
+    # 假 MAA + 无模拟器：rig 里默认不探模拟器、也不许它开 MuMu（要跑 rig 26 时临时改成 true）
+    maaCheckEmulator: false
+    maaLaunchEmulator: false
+    maaEmulatorExePath: D:\Program Files\Netease\MuMu\nx_main\MuMuManager.exe
+    maaEmulatorVmIndex: '0'
+    maaEmulatorAdb: 127.0.0.1:16384
+    maaEmulatorWaitSeconds: 180
+    maaDispatchTimeoutMinutes: 5
+    endfieldEnabled: false
+    endfieldExePath: D:\MaaEnd-win-x86_64-v2.3.0\MaaEnd.exe
+    endfieldMxuConfigPath: D:\MaaEnd-win-x86_64-v2.3.0\config\mxu-MaaEnd.json
+    endfieldInstanceName: 全套日常
+    endfieldHost: 127.0.0.1
+    endfieldPort: 12701
+    endfieldRestartIfRunning: false
+    toolEnabled: true
   chatluna-toolbox:tbx001:
     oneBotProtocol: napcat
     enabledNativeTools:
@@ -404,6 +431,14 @@ plugins:
       - vision.this
       - persona.show
       - routine.status
+      - maa.daily
+      - maa.status
+      - maa.stop
+      - maa.probe
+      - endfield.daily
+      - endfield.status
+      - endfield.stop
+      - endfield.probe
       - episode.preview
       - routine.push
       - replacer

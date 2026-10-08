@@ -25,6 +25,12 @@
  * ★ **端口空着也可能是"已经有一个实例在跑"**：koishi 的 worker 会在上一轮没收干净时变成孤儿，
  *   既不听端口、又照样连着 NapCat 收事件，于是每条命令被回答两次。启动前会查 NapCat 的
  *   连接数，发现就拒绝（见坑 57）。
+ * ★ **端口空着也不等于"能绑"**（坑 85）：Windows 会把 TCP 端口划进保留区（Hyper-V/WinNAT
+ *   每次开机在动态端口范围里圈一块；本机 `MaxUserPort=15000` → 动态范围 1024-15000），
+ *   落在里面的端口 `listen()` 直接 EACCES。这时起实例不会崩、只是"半死"：server 插件绑不上
+ *   → 抛 "No open ports available" → server 服务被销毁 → 所有 `required:['server']` 的插件
+ *   （game-auto → /maa.* /endfield.*，共 18 条指令）跟着被销毁，而日志里一句错都没有。
+ *   所以启动前真的**试绑一次**，并把 EACCES 和"被占"分开报。
  */
 const { spawn, execFileSync } = require('node:child_process')
 const path = require('node:path')
@@ -65,6 +71,21 @@ function portBusy(port) {
     const s = net.createServer()
     s.once('error', (e) => resolve(e.code === 'EADDRINUSE'))
     s.once('listening', () => s.close(() => resolve(false)))
+    s.listen(port, '127.0.0.1')
+  })
+}
+
+/**
+ * ★ 2026-10-08 补（坑 85）：端口"空闲"≠"能绑"。
+ *   `portBusy()` 只认 EADDRINUSE，于是被 Windows 保留区占住的端口（listen → EACCES）
+ *   会被判成"空闲"，Koishi 照样起得来 —— 但里面的 server 插件绑不上，整棵依赖树跟着死。
+ *   这个函数把"到底能不能绑"和"绑不上是为什么"分开回答。
+ */
+function portBindable(port) {
+  return new Promise((resolve) => {
+    const s = net.createServer()
+    s.once('error', (e) => resolve({ ok: false, code: e.code ?? e.message }))
+    s.once('listening', () => s.close(() => resolve({ ok: true, code: null })))
     s.listen(port, '127.0.0.1')
   })
 }
@@ -135,6 +156,84 @@ function killTree(pid) {
   } catch {}
 }
 
+/**
+ * ★ 2026-10-08（坑 84）：**"谁持有 5140"不等于"谁是树根"** —— 只杀 holder，它会自己活过来。
+ *
+ * 生产是三层：`run-prod.cjs` → `koishi/bin.js start`（CLI）→ `koishi/lib/worker`（持端口）。
+ * `taskkill /T` 只往下杀，**父进程一根汗毛都不掉**；而 `bin.js start` 是**看护进程**，
+ * 发现 worker 没了就再 fork 一个。实测：`taskkill /PID <5140 holder> /T /F` 回 SUCCESS，
+ * 10 秒后 5140 又被占上、只是 PID 换了个人 —— 于是 `--takeover` 接着因为"端口被占"拒绝启动，
+ * **"重启"变成"没换成"**；最坏的情况下新实例与"复活"的旧实例同时在跑 = 坑 57 的双回复。
+ *
+ * 所以收进程要**连它的看护父进程一起**收。安全边界（很重要，见坑 70/72）：
+ *   · 只按**父子关系**往上走，不按命令行匹配别的进程；
+ *   · 只认 `node.exe`，且命令行**真的是**我们那几个脚本（正则锚在 node.exe 后面第一个参数上）——
+ *     dsh 的 runner 命令行里也可能出现 "run-prod.cjs" 这几个字，但它后面跟的是自己的 server.js，不会命中；
+ *   · 一旦往上遇到非 node（cmd.exe / powershell / explorer）或不认识的 node，**立刻停**；
+ *   · `run-prod.cjs` 自己那一层**不收**（它是本次的启动器，父进程一死它自己会退出并落盘/清扫日志）。
+ */
+function processTable() {
+  try {
+    const out = execFileSync(
+      'powershell',
+      [
+        '-NoProfile',
+        '-NonInteractive',
+        '-Command',
+        'Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,CommandLine | ConvertTo-Json -Compress -Depth 2',
+      ],
+      { encoding: 'utf8', timeout: 20000, windowsHide: true }
+    )
+    const parsed = JSON.parse(out)
+    return Array.isArray(parsed) ? parsed : [parsed]
+  } catch (e) {
+    return []
+  }
+}
+
+/** node.exe 后面第一个参数是不是我们那几个脚本（防止误认 dsh runner，见上面第 2 条边界） */
+const OUR_NODE_SCRIPTS = [
+  /node(\.exe)?"?\s+"?[^"]*koishi[\\/]lib[\\/]worker/i,
+  /node(\.exe)?"?\s+"?[^"]*koishi[\\/]bin\.js/i,
+]
+const LAUNCHER_SCRIPT = /node(\.exe)?"?\s+"?[^"]*run-prod\.cjs/i
+
+/**
+ * 返回**要收掉的那几个 pid**，顺序是 [目标, 它的看护 CLI]（不含 run-prod 自己）。
+ * 拿不到进程表时退回 [pid] —— 至少维持原来的行为，不会更糟。
+ */
+function collectTree(pid) {
+  const list = [Number(pid)]
+  const table = processTable()
+  if (!table.length) return list
+  const byId = new Map(table.map((p) => [Number(p.ProcessId), p]))
+  let cur = byId.get(Number(pid))
+  for (let i = 0; i < 2 && cur; i++) {
+    const parent = byId.get(Number(cur.ParentProcessId))
+    if (!parent || !/^node(\.exe)?$/i.test(String(parent.Name ?? ''))) break
+    const cl = String(parent.CommandLine ?? '')
+    if (LAUNCHER_SCRIPT.test(cl)) break // 到启动器了：它自己会退，而且它落盘/清扫日志
+    if (!OUR_NODE_SCRIPTS.some((re) => re.test(cl))) break // 不认识的 node 祖先（可能是 dsh runner）→ 停
+    list.push(Number(parent.ProcessId))
+    cur = parent
+  }
+  return list
+}
+
+/** 先收看护（父），再收目标 —— 反过来会留出"父进程再 fork 一个"的窗口 */
+function killWithSupervisor(pid, verbose) {
+  const tree = collectTree(pid).reverse()
+  for (const p of tree) {
+    if (verbose && tree.length > 1) {
+      console.log(`  taskkill /PID ${p} /T /F${p === tree[0] ? '（看护父进程，先收它，坑 84）' : ''}`)
+    } else if (verbose) {
+      console.log(`  taskkill /PID ${p} /T /F`)
+    }
+    killTree(p)
+  }
+  return tree
+}
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 async function main() {
@@ -159,7 +258,22 @@ async function main() {
   // --check：只看现状不动手（排查"是不是有两个实例"时最先跑这条）
   if (has('check')) {
     const busy = await portBusy(PORT)
-    console.log(`HTTP 端口 ${PORT}：${busy ? `被占用（PID ${holder ?? '?'}）` : '空闲'}`)
+    /**
+     * ★ 坑 85：这里以前只说"空闲/被占用"，而"空闲但绑不上"（Windows 保留区）看起来和"空闲"一模一样，
+     *   于是 `--check` 报"干净，直接起"，起来却是半死实例。现在把"能不能绑"也说出来。
+     */
+    const bind = busy ? null : await portBindable(PORT)
+    const portDesc = busy
+      ? `被占用（PID ${holder ?? '?'}）`
+      : bind?.ok
+        ? '空闲，且能绑'
+        : `空闲，但**绑不上**（${bind?.code} —— 坑 85）`
+    console.log(`HTTP 端口 ${PORT}：${portDesc}`)
+    if (!busy && bind && !bind.ok) {
+      console.log('  ↳ Windows 保留区占着它，起 Koishi 只会得到"半死"实例：server 绑不上 → /maa.* 消失，')
+      console.log('    而实例不崩不报错。看一眼：netsh int ipv4 show excludedportrange protocol=tcp')
+      console.log('    抢回来（会弹 UAC）：powershell -NoProfile -ExecutionPolicy Bypass -File tools\\fix-port-5140.ps1')
+    }
     console.log(`NapCat 端口 ${np}：${clients.length ? `${clients.length} 个进程连着 —— PID ${clients.join(', ')}` : '没有进程连着'}`)
     console.log(`判定：${orphans.length ? `有 ${orphans.length} 个孤儿实例（PID ${orphans.join(', ')}）—— 每条命令会被回答两次（坑 57）` : '没有孤儿'}`)
     console.log(
@@ -168,9 +282,33 @@ async function main() {
           ? 'node tools\\run-prod.cjs --kill-orphans'
           : busy
             ? 'node tools\\run-prod.cjs --takeover（会一并收掉正在服务的那个实例）'
-            : '（干净，直接起）')
+            : bind && !bind.ok
+              ? '（先跑上面那条 fix-port-5140.ps1，否则起不起来）'
+              : '（干净，直接起）')
     )
     process.exit(0)
+  }
+
+  /**
+   * ★ 坑 85：先确认端口**真的能绑**，再决定动不动旧实例。
+   *   顺序反了的话：`--takeover` 把正在服务的实例收掉了，新实例却因为 EACCES 半死 —— 机器人直接没了。
+   *   （端口被占时不用查：占得住就说明绑得上，交给上面的 takeover 逻辑处理。）
+   */
+  if (!(await portBusy(PORT))) {
+    const bind = await portBindable(PORT)
+    if (!bind.ok) {
+      console.error(`✗ ${PORT} 端口空着，但**绑不上**（${bind.code}）—— 起 Koishi 只会得到"半死"实例：`)
+      console.error('  server 插件绑不上 → 抛 "No open ports available" → server 服务被销毁 →')
+      console.error("  所有 required:['server'] 的插件（game-auto → /maa.* /endfield.*，18 条指令）一起被销毁，")
+      console.error('  而实例不崩、不报错、照常连着 NapCat —— 整份日志一句错都看不到（坑 85）。')
+      if (bind.code === 'EACCES') {
+        console.error(`  原因：${PORT} 落在 Windows 的保留端口区里（Hyper-V/WinNAT 每次开机在动态端口范围里圈一块）。`)
+        console.error('  看一眼：netsh int ipv4 show excludedportrange protocol=tcp')
+        console.error('  抢回来（会弹 UAC）：powershell -NoProfile -ExecutionPolicy Bypass -File tools\\fix-port-5140.ps1')
+      }
+      console.error('  详见 docs/04-踩坑记录/01-环境与安装.md 里的坑 85。')
+      process.exit(1)
+    }
   }
 
   if (targets.length && (takeover || has('kill-orphans'))) {
@@ -188,8 +326,7 @@ async function main() {
             console.error(`✗ PID ${pid} 连着 NapCat 却不是 node.exe —— 不敢动它，请自己确认后再启动。`)
             process.exit(1)
           }
-          console.log(`  taskkill /PID ${pid} /T /F`)
-          killTree(pid)
+          killWithSupervisor(pid, true)
         }
         await sleep(1200)
         const now = napcatClients(np)
@@ -224,7 +361,7 @@ async function main() {
       process.exit(1)
     }
     console.log(`（--takeover：收掉占着 ${PORT} 但没连 NapCat 的 node 进程 PID ${holder}）`)
-    killTree(holder)
+    killWithSupervisor(holder, true)
     await sleep(1200)
   }
 

@@ -13,6 +13,8 @@ ChatLuna 接大模型。除了市场上的插件，这里还有 **20+ 个自研�
 
 ```
 .
+├── 启动面板.cmd          ★ 一键启动面板（双击：起本地控制台 + 开浏览器）
+├── tools/panel/          ★ 那个面板（启停 Koishi/NapCat、看日志、显示登录二维码、跳转 WebUI）
 ├── koishi-app/          ★ 生产实例（端口 5140）
 │   ├── koishi.yml        应用配置（密钥已外置为环境变量）
 │   ├── package.json      依赖；自研插件以 file:external/<包名> 引入
@@ -91,6 +93,13 @@ node tools/patch-long-memory.cjs
 
 ### 6. 启动
 
+**推荐：双击仓库根目录的 `启动面板.cmd`** —— 它起一个本地面板（<http://127.0.0.1:5151>），
+在里面一键启停 Koishi / NapCat、看两边日志、显示 NapCat 的登录二维码，
+并给出两个自带 token 的 WebUI 跳转链接。详见 [`tools/panel/README.md`](tools/panel/README.md)
+与 [`docs/34-一键启动面板.md`](docs/34-一键启动面板.md)。
+
+或者按老办法手工起：
+
 ```bash
 cd koishi-app
 npm start
@@ -105,6 +114,9 @@ npm start
 ```
 
 NapCat 没起来时会每 5 秒重试、`ECONNREFUSED 127.0.0.1:3001` 属预期现象。
+
+> 生产实例平时请用 `node koishi-app/tools/run-prod.cjs`（面板走的就是它）：
+> 日志按天落盘、跨天自动换文件、启动前查 5140 占用与"孤儿实例"。
 
 ---
 

@@ -38,6 +38,17 @@
  *   我们默认 `skipCommands: true`（指令输出本来就不引用），所以正常情况下不会撞上；
  *   两边都做了防御：page 那边会把开头的 quote/at 当"前缀"跳过再判断，
  *   这边则保证只**前置**、不改动原有 elements。
+ *
+ * ★ 2026-10-08：**自主播报**也会掉进"频道兜底"（新的坑，见 skipBroadcasts）
+ *   Steam 状态播报（koishi-plugin-steam-friend-status-fork）是定时器里
+ *   `bot.sendMessage()` 直发的，出站 session 一样没有 `__rsTrigger`，于是
+ *   `resolveTrigger` 的频道兜底把"本群最近一条入站消息"当成了它的触发消息。
+ *   群里实测两次（群 1040488785）：
+ *     20:54:08 播报被挂上「引用 1851993304 + @ 2377635116」（触发消息在 107s 前）
+ *     20:59:08 播报被挂上「引用 2067386031 + @ 483531476」（触发消息在  40s 前）
+ *   两次 @ 的都是**跟 bot 毫无关系**的群友，16 秒后群里就有人问"怎么还有@"。
+ *   而且下游 chatluna-affinity 按 quote 记账，把它算成了"回复 2377635116"。
+ *   对付办法就是下面的 `skipBroadcasts`：认出播报文案直接返回，不挂形态。
  */
 
 const { Schema, Logger, h } = require('koishi')
@@ -84,6 +95,12 @@ const Config = Schema.intersect([
         '指令自己的输出不引用 / 不 @。指令回执是功能性输出，挂引用只是噪声；' +
           '而且 chatluna-page 的自动出图要求整条消息纯文本，加了前置元素它会放弃出图'
       ),
+    skipBroadcasts: Schema.boolean()
+      .default(true)
+      .description(
+        '自主播报（Steam 状态播报这类"不是回复谁"的出站消息）不引用 / 不 @。' +
+          '它们没有触发消息，会被下面的频道兜底挂上"本群最近一条群消息"的作者 —— 实测 @ 错人'
+      ),
   }),
   Schema.object({
     debug: Schema.boolean().default(false).description('打印每次出站的形态判定'),
@@ -98,6 +115,7 @@ function apply(ctx, config) {
     mentionInDirect: false,
     maxAgeSeconds: 180,
     skipCommands: true,
+    skipBroadcasts: true,
     debug: false,
     ...(config ?? {}),
   }
@@ -220,6 +238,37 @@ function apply(ctx, config) {
   }
 
   /**
+   * 这条出站消息是不是"自主播报"（不是回复任何人的消息）。
+   *
+   * 目前唯一的来源是 koishi-plugin-steam-friend-status-fork 的游戏状态播报：
+   * 定时器里 `bot.sendMessage(channel.id, ...)` 直发，出站 session 里既没有
+   * `__rsTrigger`、也没有任何"谁在等回复"的线索，于是和 ChatLuna 的回复一样
+   * 掉进 `resolveTrigger` 的频道兜底，被挂上"本群最近一条入站消息"的作者。
+   *
+   * 三条模板（照抄插件 src/index.ts 里的拼接）：
+   *   `${name} 开始玩 ${game} 了`
+   *   `${name} 不玩 ${game} 了[，玩了 ${playTime}]`
+   *   `${name} 不玩 ${old} 了，玩了 ${playTime}，开始玩 ${new} 了`
+   * 第三种也能被下面这条正则吃掉（`，玩了 .+` 是贪婪的）。
+   *
+   * ★ 为什么按文案认，而不是找个更"结构化"的依据：
+   *   出站 session 里**没有**任何能区分"ChatLuna 回复"和"别的插件直发"的字段 ——
+   *   两边都是 `bot.sendMessage()` 新建的 session（chatluna/lib/index.cjs:7866）。
+   *   要做成结构化的，只能由发送方自己声明；proactive 走的就是那条路
+   *   （开口前调 `ctx.replyStyle.suppress`）。第三方插件改不动，这里退一步按文案认。
+   *   认错的代价只是那条回复少一次引用/@，**不会误发**，所以可以接受。
+   */
+  const BROADCAST_TEXT = /^(?:\S.* )?(?:开始玩|不玩) .+ 了(?:，玩了 .+)?$/
+
+  function isAutonomousBroadcast(session) {
+    if (!cfg.skipBroadcasts) return false
+    const els = Array.isArray(session.elements) ? session.elements : []
+    // 只看文本元素：万一前面已经被别的插件挂了 quote/at，也不会影响文案判定
+    const text = h.select(els, 'text').join('').trim()
+    return !!text && BROADCAST_TEXT.test(text)
+  }
+
+  /**
    * 找出这条出站消息该引用谁。
    *
    * 首选 `session.__rsTrigger`（入站时打的可枚举标记，编码器会拷过来）。
@@ -263,6 +312,13 @@ function apply(ctx, config) {
       // 兜底：万一哪天出站 session 真的带上了伪身份
       if (String(session.userId || '') === PROACTIVE_USER_ID) {
         log('主动插话，不加引用/@')
+        return
+      }
+
+      // ★ 自主播报（Steam 状态播报等）：它不是"回复谁"，频道兜底会随便挑一条
+      //   最近的群消息挂上去 —— 2026-10-08 实测 @ 错了两次人。直接放行。
+      if (isAutonomousBroadcast(session)) {
+        log('自主播报，不加引用/@')
         return
       }
 
@@ -341,6 +397,7 @@ function apply(ctx, config) {
       `@ 对方：${m}${override.mention ? '（运行时覆盖）' : ''}`,
       `私聊也 @：${cfg.mentionInDirect ? '是' : '否'}`,
       `指令输出跳过：${cfg.skipCommands ? '是' : '否'}`,
+      `播报跳过：${cfg.skipBroadcasts ? '是' : '否'}`,
       `引用时效：${cfg.maxAgeSeconds}s`,
       `记录中的触发消息：${triggers.size} 条`,
     ]
@@ -390,11 +447,12 @@ function apply(ctx, config) {
   })
 
   logger.info(
-    '出站形态已挂载（引用 %s / @ %s%s；指令输出%s）',
+    '出站形态已挂载（引用 %s / @ %s%s；指令输出%s；自主播报%s）',
     cfg.quote,
     cfg.mention,
     cfg.mentionInDirect ? '（私聊也 @）' : '',
-    cfg.skipCommands ? '跳过' : '也加'
+    cfg.skipCommands ? '跳过' : '也加',
+    cfg.skipBroadcasts ? '跳过' : '也加'
   )
 }
 

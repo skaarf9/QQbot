@@ -1,0 +1,10 @@
+{
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 3000, "group": "454444539", "user": "10002", "name": "管理员", "elements": [["text", "/maa.daily"]] },
+    { "wait": 7000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/maa.status"]] },
+    { "wait": 7000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/maa.daily"]] },
+    { "wait": 50000, "group": "454444539", "user": "2791932480", "name": "主人", "elements": [["text", "/maa.status"]] }
+  ]
+}
