@@ -232,7 +232,7 @@ const PARTS = {
       {
         out: '09-测试台与验收.md',
         label: '测试台与验收',
-        desc: '伪 OneBot / rig 剧本 / 判据设计 / koishi-test 测试实例',
+        desc: '伪 OneBot / rig 剧本 / 判据设计 / routes/koishi/test 测试实例',
         nos: [24, 30, 46, 48, 56, 63, 67, 77],
       },
       {

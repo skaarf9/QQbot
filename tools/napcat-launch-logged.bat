@@ -4,7 +4,7 @@ REM NAPCAT_WORKER_PROCESS!=1 && NAPCAT_DISABLE_MULTI_PROCESS!=1 -> setFileLogEna
 REM so config\napcat.json "fileLog": true only produces real files with multiprocess off.
 REM
 REM Usage: tools\napcat-launch-logged.bat -q 2178517838
-REM Logs land under NapCat.Shell\logs\.
+REM Logs land under routes/napcat/Shell\logs\.
 set NAPCAT_DISABLE_MULTI_PROCESS=1
-cd /d D:\deepseek\QQbot\NapCat.Shell
+cd /d D:\deepseek\QQbot\routes/napcat/Shell
 call launcher-win10-user.bat %*

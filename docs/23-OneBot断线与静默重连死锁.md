@@ -40,7 +40,7 @@ Get-NetTCPConnection -RemotePort 3001 -ErrorAction SilentlyContinue
 #   什么都没有     → 适配器没连上，看 ③
 
 # ③ 日志里最后一次连上是什么时候？
-$f='D:\deepseek\QQbot\koishi-app\tools\logs\prod-<日期>.log'
+$f='D:\deepseek\QQbot\routes\koishi\app\tools\logs\prod-<日期>.log'
 Get-Content $f | Where-Object { $_ -notmatch 'sqlite >' } | Select-Object -Last 120
 #   找 'adapter connect to server' / 'websocket closed with' / 'will retry in'
 ```
@@ -174,7 +174,7 @@ socket.addEventListener("close", () => {
 
 **结论：已按方案 B 实施并验证上线。**
 
-**插件**：`koishi-app/external/koishi-plugin-onebot-watchdog`（自写，约 200 行）
+**插件**：`routes/koishi/app/external/koishi-plugin-onebot-watchdog`（自写，约 200 行）
 **生产配置**：`koishi.yml` 里的 `onebot-watchdog:wdg001`
 
 ### 5.1 它做三件事，对应三种断线
@@ -218,7 +218,7 @@ socket.addEventListener("close", () => {
 ### 6.2 测试台怎么起
 
 ```powershell
-cd D:\deepseek\QQbot\koishi-app
+cd D:\deepseek\QQbot\routes\koishi\app
 # ① 伪 OneBot（空剧本：只立服务端，不播任何事件）
 node --no-warnings tools\fake-onebot.mjs tools\scenarios\00-idle.json --port 3002 --imgPort 3003
 # ② 断线模拟器：代理 3012 → 3002，控制口 3013

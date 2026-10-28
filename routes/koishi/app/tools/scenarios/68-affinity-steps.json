@@ -1,0 +1,13 @@
+{
+  "_说明": "短场景：只验 /favor 与 /short 有没有把「升降参数」摊开（含降级步子 3）。为第十九轮降级步子 5→3 收口用。",
+  "_判据": "① /favor 输出含「好感度 → 权限等级」与「信任门槛」；② /short 输出含「折算线」与「降级线」，且降级步子显示 3（不是 5）；③ 全场景 0 条 [E]",
+  "_前置": "测试实例 chatluna-affinity:aa0015 已配 shortTerm 12/-8/+6/3；第一步必须在群里放行 454444539",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "group": "454444539", "groupName": "My Test", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/guard.allow"]] },
+    { "wait": 5000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/text on"]] },
+    { "wait": 5000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/favor"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/short"]] }
+  ]
+}

@@ -3,22 +3,22 @@ chcp 65001 >nul
 setlocal EnableExtensions DisableDelayedExpansion
 
 REM ============================================================================
-REM  NapCat.Framework launcher: fixes working dir, self-elevates, logs to file.
+REM  routes/napcat/Framework launcher: fixes working dir, self-elevates, logs to file.
 REM
 REM  Why this exists:
-REM   1) NapCat.Framework\napiLoader.bat builds the napiloader.dll / napimain.exe /
+REM   1) routes/napcat/Framework\napiLoader.bat builds the napiloader.dll / napimain.exe /
 REM      nativeLoader.cjs paths from %cd%, but never self-elevates. "Run as
 REM      administrator" from Explorer starts it with %cd% = C:\Windows\System32,
 REM      so all three paths are wrong and the window vanishes; a plain
 REM      double-click fails injection because it is not elevated. This script
 REM      cd's into the Framework dir first, then calls it.
 REM   2) The Framework build reads the same config dir as Shell
-REM      (NapCat.Framework\config is junctioned to NapCat.Shell\config), so the
+REM      (routes/napcat/Framework\config is junctioned to routes/napcat/Shell\config), so the
 REM      existing login and OneBot settings are reused - no QR re-scan.
 REM
 REM  Usage:  tools\start-napcat-framework.bat
 REM          tools\start-napcat-framework.bat -q 2178517838   (quick login)
-REM  Log:    NapCat.Shell\logs\napcat-framework-console.log
+REM  Log:    routes/napcat/Shell\logs\napcat-framework-console.log
 REM ============================================================================
 
 REM --- ASCII-only text below this line: cmd.exe decodes .bat as the OEM codepage,
@@ -28,8 +28,8 @@ REM     turn into a bogus command. Keep this file English. ---
 set "SCRIPT_DIR=%~dp0"
 set "ROOT=%SCRIPT_DIR%.."
 for %%I in ("%ROOT%") do set "ROOT=%%~fI"
-set "FW=%ROOT%\NapCat.Framework"
-set "LOGDIR=%ROOT%\NapCat.Shell\logs"
+set "FW=%ROOT%\routes/napcat/Framework"
+set "LOGDIR=%ROOT%\routes/napcat/Shell\logs"
 set "LOG=%LOGDIR%\napcat-framework-console.log"
 set "SELF=%ROOT%\tools\start-napcat-framework.bat"
 

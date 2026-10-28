@@ -2,7 +2,7 @@
 /**
  * clean-logs.cjs —— 清掉测试台跑下来堆积的日志。
  *
- * 为什么需要：跑一轮剧本留 200~400 KB，几十轮之后 koishi-app/tools 下就是几 MB，
+ * 为什么需要：跑一轮剧本留 200~400 KB，几十轮之后 routes/koishi/app/tools 下就是几 MB，
  * 而且只增不减。默认保留最近 7 天，并永远跳过 last-run.log / prod.log。
  *
  * 用法：
@@ -10,13 +10,13 @@
  *   node tools\clean-logs.cjs --force        # 真删
  *   node tools\clean-logs.cjs --days 2       # 改成保留 2 天
  *   node tools\clean-logs.cjs --days 0       # 除了受保护的，全删
- *   node tools\clean-logs.cjs --force --all  # 连 koishi-test\ 下的日志一起扫
+ *   node tools\clean-logs.cjs --force --all  # 连 routes/koishi/test\ 下的日志一起扫
  */
 const fs = require('node:fs')
 const path = require('node:path')
 
 const ROOT = path.resolve(__dirname, '..')
-const APP_TOOLS = path.join(ROOT, 'koishi-app', 'tools')
+const APP_TOOLS = path.join(ROOT, 'routes/koishi/app', 'tools')
 
 const argv = process.argv.slice(2)
 const has = (f) => argv.includes('--' + f)
@@ -33,7 +33,7 @@ const all = has('all')
 const PROTECTED = new Set(['last-run.log', 'prod.log'])
 
 const dirs = [APP_TOOLS, path.join(APP_TOOLS, 'logs')]
-if (all) dirs.push(path.join(ROOT, 'koishi-test'), path.join(ROOT, 'koishi-app'))
+if (all) dirs.push(path.join(ROOT, 'routes/koishi/test'), path.join(ROOT, 'routes/koishi/app'))
 
 function walkLogs(dir, depth = 0) {
   if (!fs.existsSync(dir) || depth > 2) return []

@@ -12,7 +12,7 @@
  * 用法：
  *   node --experimental-sqlite --no-warnings tools/seed-old-conversation.cjs
  *   node --experimental-sqlite --no-warnings tools/seed-old-conversation.cjs --hours 5
- *   node --experimental-sqlite --no-warnings tools/seed-old-conversation.cjs --db koishi-app/data/koishi.db
+ *   node --experimental-sqlite --no-warnings tools/seed-old-conversation.cjs --db routes/koishi/app/data/koishi.db
  *   node --experimental-sqlite --no-warnings tools/seed-old-conversation.cjs --text "我养了只猫叫团子"
  */
 const { DatabaseSync } = require('node:sqlite')
@@ -25,7 +25,7 @@ const opt = (n, d) => {
   const i = args.indexOf(`--${n}`)
   return i >= 0 ? args[i + 1] : d
 }
-const DB = opt('db', path.join(__dirname, '..', 'koishi-test', 'data', 'test.db'))
+const DB = opt('db', path.join(__dirname, '..', 'routes/koishi/test', 'data', 'test.db'))
 const HOURS = Number(opt('hours', 3))
 const TEXT = opt('text', '我昨天说我饿了想吃烤鱼')
 const BINDING = opt('binding', 'shared:onebot:2178517838:454444539')

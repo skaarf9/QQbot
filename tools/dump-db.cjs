@@ -2,8 +2,8 @@
  * 只读导出 chatluna 相关表，用来在 Koishi 之外独立验证状态。
  *
  *   cd D:\deepseek\QQbot
- *   node --experimental-sqlite tools\dump-db.cjs                 # 生产库 koishi-app/data/koishi.db
- *   node --experimental-sqlite tools\dump-db.cjs --db koishi-test/data/test.db
+ *   node --experimental-sqlite tools\dump-db.cjs                 # 生产库 routes/koishi/app/data/koishi.db
+ *   node --experimental-sqlite tools\dump-db.cjs --db routes/koishi/test/data/test.db
  *
  * 注意：Node 22 需要 --experimental-sqlite；即使脚本成功，
  *       PowerShell 也会因 stderr 的 experimental 警告报 exit 1，属正常。
@@ -16,7 +16,7 @@ const dbArgIdx = argv.indexOf('--db')
 const DB =
   dbArgIdx >= 0 && argv[dbArgIdx + 1]
     ? path.resolve(process.cwd(), argv[dbArgIdx + 1])
-    : path.resolve(__dirname, '../koishi-app/data/koishi.db')
+    : path.resolve(__dirname, '../routes/koishi/app/data/koishi.db')
 console.log('库：' + DB)
 const db = new DatabaseSync(DB, { readOnly: true })
 

@@ -24,7 +24,7 @@ const getArg = (name, dflt) => {
 const GROUP = String(getArg('group', '777000111'))
 const DUMP_ONLY = argv.includes('--dump')
 const PLATFORM = 'onebot'
-const DB = path.resolve(__dirname, '../koishi-test/data/test.db')
+const DB = path.resolve(__dirname, '../routes/koishi/test/data/test.db')
 
 const db = new DatabaseSync(DB)
 

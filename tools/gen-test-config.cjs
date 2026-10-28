@@ -1,21 +1,21 @@
 // 生成测试实例的 koishi.yml（从生产配置里抄 API Key，避免手抄）
 //
-// ⚠️⚠️ 2026-10-04 警告：**这个脚本的模板已经落后于 koishi-test/koishi.yml 的真实内容**，
+// ⚠️⚠️ 2026-10-04 警告：**这个脚本的模板已经落后于 routes/koishi/test/koishi.yml 的真实内容**，
 //   直接运行会把手工加过的插件块整段删掉（实测：485 行 → 243 行，episode / toolbox /
 //   page / alias / watchdog / variable-extension / multi-adapter 全没了）。
-//   测试配置现在是**手工维护**的：要加插件就直接编辑 koishi-test/koishi.yml。
+//   测试配置现在是**手工维护**的：要加插件就直接编辑 routes/koishi/test/koishi.yml。
 //   要恢复这个脚本，得先把真实文件里缺的块逐个补进下面这个模板。
 //   ★ 唯一还值得用的是它的「同步预设 + 同步人设卡片」两段 —— 需要时单独跑最后那几行。
 const fs = require('node:fs')
 const path = require('node:path')
 
-const APP = 'D:/deepseek/QQbot/koishi-app'
-const TEST = 'D:/deepseek/QQbot/koishi-test'
+const APP = 'D:/deepseek/QQbot/routes/koishi/app'
+const TEST = 'D:/deepseek/QQbot/routes/koishi/test'
 
 if (!process.argv.includes('--force')) {
   console.error(
-    '拒绝执行：这个脚本会用过期模板覆盖 koishi-test/koishi.yml（会删掉手工加的插件块）。\n' +
-      '测试配置请直接改 koishi-test/koishi.yml；确实要覆盖就加 --force。'
+    '拒绝执行：这个脚本会用过期模板覆盖 routes/koishi/test/koishi.yml（会删掉手工加的插件块）。\n' +
+      '测试配置请直接改 routes/koishi/test/koishi.yml；确实要覆盖就加 --force。'
   )
   process.exit(2)
 }
@@ -31,7 +31,7 @@ console.log(adapterBlock)
 
 // R9 主动发言：**不再从生产配置抄**（自写插件的提示词是 schema 默认值，配置里只有数字），
 // 测试台要把阈值调低、冷却归零、空闲压到 1 分钟，好在一两分钟内复现"没人叫它，它自己开口"。
-// ★ 提示词想验证生产版本的话，把 koishi-app\koishi.yml 里 chatluna-proactive 的
+// ★ 提示词想验证生产版本的话，把 routes/koishi/app\koishi.yml 里 chatluna-proactive 的
 //   activityPrompt / idlePrompt 抄过来即可（默认值就在插件源码里，两边一字不差）。
 const proactiveBlock = [
   '    enabled: true',
@@ -53,7 +53,7 @@ const proactiveBlock = [
 ].join('\n')
 
 const yml = `# 测试实例：只连伪 OneBot（tools/fake-onebot.mjs），不碰真 QQ。
-# 生产实例在 koishi-app/，端口 5140；这个跑 5141。
+# 生产实例在 routes/koishi/app/，端口 5140；这个跑 5141。
 prefix:
   - /
   - .
@@ -240,22 +240,22 @@ ${proactiveBlock}
     stagesCommand: true
     debug: true
   chatluna-mcp-client:mcp002:
-    # 联网搜索 MCP（脚本本体在 koishi-app/mcp/，测试实例复用同一份 + 同一个 SDK）
-    # ★ koishi-test/node_modules 里要能解析到这个插件；它不是 junction 而是 npm 建的真实目录，
+    # 联网搜索 MCP（脚本本体在 routes/koishi/app/mcp/，测试实例复用同一份 + 同一个 SDK）
+    # ★ routes/koishi/test/node_modules 里要能解析到这个插件；它不是 junction 而是 npm 建的真实目录，
     #   加自研/新插件时两边都要建链接（见 docs/04 坑 63）。
     servers: |
       {
         "mcpServers": {
           "websearch": {
             "command": "node",
-            "args": ["D:/deepseek/QQbot/koishi-app/mcp/websearch-server.cjs"],
-            "cwd": "D:/deepseek/QQbot/koishi-app",
+            "args": ["D:/deepseek/QQbot/routes/koishi/app/mcp/websearch-server.cjs"],
+            "cwd": "D:/deepseek/QQbot/routes/koishi/app",
             "env": {
               "HTTP_PROXY": "http://127.0.0.1:7890",
               "HTTPS_PROXY": "http://127.0.0.1:7890",
               "ALL_PROXY": "http://127.0.0.1:7890",
               "NO_PROXY": "localhost,127.0.0.1,::1",
-              "NODE_PATH": "D:/deepseek/QQbot/koishi-app/node_modules"
+              "NODE_PATH": "D:/deepseek/QQbot/routes/koishi/app/node_modules"
             }
           }
         }
@@ -282,12 +282,12 @@ fs.writeFileSync(path.join(TEST, 'koishi.yml'), yml, 'utf8')
 console.log('\n已写出 ' + path.join(TEST, 'koishi.yml'))
 
 const pkg = JSON.parse(fs.readFileSync(path.join(APP, 'package.json'), 'utf8'))
-pkg.name = 'qqbot-koishi-test'
+pkg.name = 'qqbot-routes/koishi/test'
 pkg.description = '测试实例（伪 OneBot）'
 
-// ★ 自研插件的依赖路径必须从 koishi-test 出发指回 koishi-app，
-//   因为生产配置里写的是 `file:external/...`，那是相对 koishi-app 的。
-//   照抄会得到 koishi-test\external\... 这个不存在的路径 → junction 是坏的。
+// ★ 自研插件的依赖路径必须从 routes/koishi/test 出发指回 routes/koishi/app，
+//   因为生产配置里写的是 `file:external/...`，那是相对 routes/koishi/app 的。
+//   照抄会得到 routes/koishi/test\external\... 这个不存在的路径 → junction 是坏的。
 //   指向真实源码还有个好处：改插件代码两边同时生效（测试实例是 junction，不是拷贝）。
 const LOCAL_PLUGINS = [
   'koishi-plugin-chatluna-affinity-bridge',
@@ -305,7 +305,7 @@ const LOCAL_PLUGINS = [
   'koishi-plugin-qqbot-auth',
 ]
 for (const name of LOCAL_PLUGINS) {
-  pkg.dependencies[name] = `file:../koishi-app/external/${name}`
+  pkg.dependencies[name] = `file:../routes/koishi/app/external/${name}`
 }
 fs.writeFileSync(
   path.join(TEST, 'package.json'),
@@ -314,7 +314,7 @@ fs.writeFileSync(
 )
 console.log('已写出 package.json')
 
-// ★ 预设也要同步：测试实例读的是自己的 koishi-test/data/chathub/presets/，
+// ★ 预设也要同步：测试实例读的是自己的 routes/koishi/test/data/chathub/presets/，
 //   不同步的话改了生产的预设（比如加 {long_memory()}）测试实例根本不知道。
 const presetSrc = path.join(APP, 'data', 'chathub', 'presets')
 const presetDst = path.join(TEST, 'data', 'chathub', 'presets')
@@ -328,7 +328,7 @@ for (const name of fs.readdirSync(presetSrc)) {
 console.log('已同步预设：' + synced.join(', '))
 
 // ★ 人设卡片（data/persona/self.yml）也要同步：chatluna-persona 按**各自实例的 baseDir**
-//   去解析 selfCardPath，测试实例读的是 koishi-test/data/persona/self.yml。
+//   去解析 selfCardPath，测试实例读的是 routes/koishi/test/data/persona/self.yml。
 //   不同步的话测试台上"人设卡片读不到"→ 静默退回内置兜底（不会报错，但验的就不是真卡片了）。
 const personaSrc = path.join(APP, 'data', 'persona')
 const personaDst = path.join(TEST, 'data', 'persona')

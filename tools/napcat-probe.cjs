@@ -16,17 +16,17 @@ const fs = require('node:fs')
 const path = require('node:path')
 
 /**
- * ★ 2026-10-04：这里原来写死 `H:/NapCat.Shell/config/onebot11_2178517838.json`。
+ * ★ 2026-10-04：这里原来写死 `H:/routes/napcat/Shell/config/onebot11_2178517838.json`。
  *   NapCat 后来搬到了 D 盘，于是**排障第一步直接 ENOENT 崩掉**（docs/23 那套五分钟定位流程
  *   第一句就跑不动）—— 是查「两条回复」时顺带撞见的（坑 70）。
  *   现在自动找：优先挑"有启用的 websocketServers、且服务器名是 koishi"的那份配置。
- *   想手工指定：NAPCAT_CONFIG=<onebot11_xxx.json 全路径>，或 NAPCAT_HOME=<NapCat.Shell 目录>。
+ *   想手工指定：NAPCAT_CONFIG=<onebot11_xxx.json 全路径>，或 NAPCAT_HOME=<routes/napcat/Shell 目录>。
  */
 const CANDIDATE_ROOTS = [
   process.env.NAPCAT_HOME,
-  'D:/deepseek/QQbot/NapCat.Shell',
-  'H:/NapCat.Shell',
-  'D:/NapCat.Shell',
+  'D:/deepseek/QQbot/routes/napcat/Shell',
+  'H:/routes/napcat/Shell',
+  'D:/routes/napcat/Shell',
 ].filter(Boolean)
 
 /** 在候选根目录里挑一份可用的 onebot11_*.json */

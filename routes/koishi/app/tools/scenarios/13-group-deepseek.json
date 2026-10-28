@@ -1,0 +1,20 @@
+{
+  "_说明": "验「切官方 DeepSeek 之后群聊是否恢复正常」：群 @bot 说一句，期望拿到真实模型回复，而不是错误码 999/103 的报错文本。",
+  "_判据": [
+    "① 回复内容是模型生成的一句话，**不含**『使用 ChatLuna 时出现错误』",
+    "② 日志里没有 ChatLunaError / malformed / wasm",
+    "③ 请求记录里 model = deepseek-flash 且 status = success"
+  ],
+  "_前置": "测试实例 koishi.yml 已切 https://api.deepseek.com + DEEPSEEK_API_KEY；测试库 data/test.db",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    {
+      "wait": 10000,
+      "group": "454444539",
+      "user": "2791932480",
+      "name": "测试员",
+      "elements": [["at", "2178517838"], ["text", " 只回四个字：群聊已通"]]
+    }
+  ]
+}

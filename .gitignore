@@ -3,8 +3,8 @@ node_modules/
 package-lock.json.bak
 
 # ---- runtime state (chat history db, file storage, caches) ----
-koishi-app/data/
-koishi-test/data/
+routes/koishi/app/data/
+routes/koishi/test/data/
 *.db
 *.db-journal
 *.db-wal
@@ -25,20 +25,37 @@ temp/
 *.tmp
 
 # ---- 测试台日志（跑一轮剧本 200~400 KB）----
-#   策略：同名覆盖 + 跑完清扫超期日志，见 koishi-app/tools/log-retention.cjs
+#   策略：同名覆盖 + 跑完清扫超期日志，见 routes/koishi/app/tools/log-retention.cjs
 #       和 tools/clean-logs.cjs（默认保留 7 天，last-run.log / prod.log 永不删）
-koishi-app/tools/logs/
-koishi-app/tools/last-run.log
+routes/koishi/app/tools/logs/
+routes/koishi/app/tools/last-run.log
 
 # ---- 文档切分前的原单文件备份（190 KB，确认分册没问题后可以删）----
 进度与交接.md.bak-*
 
 # ---- R12 自我扩展写配置前的备份（每次 /插件安装 都会生成一个，不入库）----
-koishi-test/koishi.yml.bak-*
-koishi-app/koishi.yml.bak-*
+routes/koishi/test/koishi.yml.bak-*
+routes/koishi/app/koishi.yml.bak-*
 
 # ---- 本地嵌入模型的下载缓存（transformers.js / ONNX，约 23MB，可重下）----
 models/
+routes/koishi/models/
+
+# ---- AstrBot 路线：运行时装机量与数据 ----
+routes/astrbot/.uv-tools/
+routes/astrbot/.uv-cache/
+routes/astrbot/bin/
+routes/astrbot/app/.astrbot
+routes/astrbot/app/.astrbot*
+routes/astrbot/app/astrbot.lock
+routes/astrbot/app/data/
+routes/astrbot/logs/
+routes/astrbot/workspace/*
+!routes/astrbot/workspace/.gitkeep
+!routes/astrbot/workspace/AGENTS.md
+!routes/astrbot/workspace/scripts/
+!routes/astrbot/workspace/scripts/**
+**/__pycache__/
 
 # ---- 调研/探针临时目录（抓下来的 registry、npm tarball 等）----
 .scratch/
@@ -57,12 +74,16 @@ desktop.ini
 .doc-split-backup/
 
 # ---- NapCat 运行时（QQ 框架本体，约 315 MB；新设备需单独安装，不入库）----
-NapCat.Framework/
-NapCat.Shell/
+routes/napcat/Framework/
+routes/napcat/Shell/
 
 # ---- 本机试跑残留的配置备份 ----
-koishi-app/.scratch-koishi.yml.bak
+routes/koishi/app/.scratch-koishi.yml.bak
 *.yml.bak
+
+# ---- 改脚本前留的时间戳备份（`xxx.cjs.bak-<原因>-<时间>`，只在改的当下有用）----
+*.bak-*
+*.bak
 
 # ---- 模型清单 / 注册表抓取缓存（一次性，可重抓）----
 ccmodels.json
@@ -73,10 +94,10 @@ registry.json
 .workbuddy/
 
 # ---- 调研/探针的二进制与生成产物（源码脚本与文档仍入库）----
-_research/*.tgz
-_research/*.png
-_research/testurl.txt
-_research/imgrender/
-_research/oai_like/
-_research/pp/
-_research/render-out/
+research/_research/*.tgz
+research/_research/*.png
+research/_research/testurl.txt
+research/_research/imgrender/
+research/_research/oai_like/
+research/_research/pp/
+research/_research/render-out/

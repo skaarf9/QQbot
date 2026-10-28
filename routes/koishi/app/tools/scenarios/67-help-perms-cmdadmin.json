@@ -1,0 +1,49 @@
+{
+  "_说明": "第十八轮：① /help 按使用者等级过滤（普通群友看不到用不了的别名）② 等级一律显示文本名 ③ 别名动态（/cmdadmin alias 加完立刻出现在 /help，删掉立刻消失）④ /cmdadmin 能管别名与用途文本 ⑤ /favor 附『离信任还差多少』",
+  "_判据": "① 主人 /help = 62 个别名且含 /cmdadmin；普通群友 /help = 61 个且**没有** /cmdadmin、/cman，页脚有『还有 1 条你用不了：/help -u』。② 普通群友 /help -all 里不含 cmdadmin，但含『想看自己等级不够的那些：/help -u』；/help -u 列出『你用不了的别名』并含 /cman。③ 普通群友 /cmdadmin 被拒（权限不足）。④ /cmdadmin alias cmdadmin cman 之后 /help = 62 且含 /cmdadmin；删掉后回到 61 且不再含。⑤ /cmdadmin desc help <文本> 之后 /help 第一行就是该文本；list -f <文本> 命中。⑥ /cmdadmin level models 信任 后 list -l 信任 里出现 models。⑦ /qqbot.auth.me 出现『信任门槛』『还差』；/favor 出现『好感度 → 权限等级』。⑧ 全场景 0 条 [E]",
+  "_前置": "测试实例 chatluna-help.showUnavailable=false（本轮默认值）；主人=2791932480（等级 4），普通群友=10001（等级 1）。第一步必须在群里放行 454444539",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    { "wait": 0, "group": "454444539", "groupName": "My Test", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/guard.allow"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/text on"]] },
+
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/help"]] },
+    { "wait": 6000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["text", "/help"]] },
+    { "wait": 6000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["text", "/help -all"]] },
+    { "wait": 6000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["text", "/help -u"]] },
+    { "wait": 6000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["text", "/cmdadmin"]] },
+
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/cmdadmin alias cmdadmin cman"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/help"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/cman"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/cmdadmin alias cmdadmin -d cman"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/help"]] },
+
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/cmdadmin desc help 指令总览（本轮验收改写的用途文本）"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/help"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/cmdadmin list -f 本轮验收"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/cmdadmin desc help -"]] },
+
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/cmdadmin level models 信任"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/cmdadmin list -l 信任"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/cmdadmin level models -"]] },
+
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/cmdadmin aliases"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/cmdadmin preview 1"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/cmdadmin preview 信任"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/help affinity"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/help models"]] },
+
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/qqbot.auth.me"]] },
+    { "wait": 6000, "group": "454444539", "user": "10001", "name": "普通群友", "elements": [["text", "/qqbot.auth.me"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/qqbot.auth.list"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/qqbot.auth.set 10001"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/qqbot.auth.set 10001 信任"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/qqbot.auth.set 10001 普通"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/favor"]] },
+    { "wait": 6000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/short"]] },
+
+    { "wait": 8000, "group": "454444539", "user": "2791932480", "name": "绮罗星", "elements": [["text", "/page.text off"]] }
+  ]
+}

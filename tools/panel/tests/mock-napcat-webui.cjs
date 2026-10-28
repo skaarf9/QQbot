@@ -25,7 +25,7 @@ const path = require('node:path')
 const crypto = require('node:crypto')
 
 const ROOT = path.resolve(__dirname, '..', '..', '..')
-const HOME = process.env.NAPCAT_HOME || path.join(ROOT, 'NapCat.Shell')
+const HOME = process.env.NAPCAT_HOME || path.join(ROOT, 'routes/napcat/Shell')
 const QR = path.join(HOME, 'cache', 'qrcode.png')
 const RUNTIME = path.join(ROOT, '.runtime', 'panel')
 const BACKUP = path.join(RUNTIME, 'qrcode.backup.png')

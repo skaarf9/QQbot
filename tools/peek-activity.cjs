@@ -5,7 +5,7 @@
 const { DatabaseSync } = require('node:sqlite')
 const path = require('node:path')
 
-const dbPath = path.join(__dirname, '..', 'koishi-app', 'data', 'koishi.db')
+const dbPath = path.join(__dirname, '..', 'routes/koishi/app', 'data', 'koishi.db')
 const db = new DatabaseSync(dbPath, { readOnly: true })
 
 const q = (sql, ...args) => {

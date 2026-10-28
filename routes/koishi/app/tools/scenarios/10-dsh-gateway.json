@@ -1,0 +1,19 @@
+{
+  "_说明": "验「Koishi 当网关直接调 DSH」：私聊发一句自然语言，看谁回——期望是 DSH 回（dsh-connector 抢在 ChatLuna 前面），而不是 ChatLuna 回。",
+  "_判据": [
+    "① 日志里出现 dsh-connector 的连接/回合行（debug: true 已开），而不是只有 chatluna 的 request 行",
+    "② 回复内容像 DSH agent（会带工具/用量信息），不是 ChatLuna 的人设闲聊",
+    "③ 不出现『两条回复』——两条就说明中间件顺序没生效，双回了"
+  ],
+  "_前置": "DSH qqbot profile 在 8090 跑着；测试实例 5141/3002；chatIdleMinutes=30 但本轮之前没有任何交互",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    {
+      "wait": 8000,
+      "user": "2791932480",
+      "name": "测试员",
+      "elements": [["text", "只回四个字：网关已通"]]
+    }
+  ]
+}

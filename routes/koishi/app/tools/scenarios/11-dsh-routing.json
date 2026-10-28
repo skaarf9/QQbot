@@ -1,0 +1,32 @@
+{
+  "_说明": "补验三件事：①群里 @bot 仍归 ChatLuna（DSH 不能抢群聊）；②私聊里敲 dsh.ping 这种指令不能被当成自然语言喂给模型；③私聊自然语言仍走 DSH。",
+  "_判据": [
+    "第1步（群 @）：回复来自 ChatLuna（本测试实例模型未配，会回『模型 empty 不可用』），且日志里**没有** dsh-connector 的 [prompt] 行",
+    "第2步（私聊 dsh.ping）：回复是连接状态卡片（含 8090 / direct / 工作区），不是模型胡答；日志里是 [cmd] 而不是 [prompt]",
+    "第3步（私聊自然语言）：日志出现 dsh-connector [turn] 完成，回复一条"
+  ],
+  "_前置": "DSH qqbot 8090 在跑；chatIdleMinutes=0（已打 patch-dsh-connector）",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    {
+      "wait": 8000,
+      "group": "454444539",
+      "user": "2791932480",
+      "name": "测试员",
+      "elements": [["at", "2178517838"], ["text", " 你好"]]
+    },
+    {
+      "wait": 12000,
+      "user": "2791932480",
+      "name": "测试员",
+      "elements": [["text", "dsh.ping"]]
+    },
+    {
+      "wait": 20000,
+      "user": "2791932480",
+      "name": "测试员",
+      "elements": [["text", "只回两个字：在的"]]
+    }
+  ]
+}

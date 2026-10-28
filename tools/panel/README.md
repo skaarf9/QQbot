@@ -18,10 +18,10 @@ Koishi + NapCat 的本地控制台：**一个网页管两件事** —— 启停�
 
 | 功能 | 说明 |
 |---|---|
-| 一键启动 / 停止 / 重启 **Koishi** | 走 `koishi-app/tools/run-prod.cjs`（日志按天落盘、跨天自动换文件、启动前查孤儿实例）；可选 `--log-level 3` debug 与 `--takeover` 接管旧实例 |
+| 一键启动 / 停止 / 重启 **Koishi** | 走 `routes/koishi/app/tools/run-prod.cjs`（日志按天落盘、跨天自动换文件、启动前查孤儿实例）；可选 `--log-level 3` debug 与 `--takeover` 接管旧实例 |
 | 一键启动 / 停止 / 重启 **NapCat** | 走 `tools/start-napcat-shell.bat`（Shell）或 `tools/start-napcat-framework.bat`（Framework），两个都是自提权脚本；可填 QQ 号走 `-q` 免扫码快速登录。★ **面板自己以管理员运行时走直接创建进程，不再需要 UAC**；面板不是管理员时面板里那条隐藏提权**实测弹不出提示**，请改用「控制台启动」（见第 9 条） |
 | **日志**（两边都在一个面板里） | 级别着色（info/warn/error/debug 左侧色条）、时间戳独立栏、关键字过滤（空格分隔=全部命中）、级别筛选、自动滚动、换行开关、清屏、导出、Koishi/NapCat/**合并**三个标签页；选到旧文件会显式标出"⚠ 这不是实时输出"并写明多久前更新的 |
-| **登录二维码** | 直接显示 NapCat 写在 `NapCat.Shell/cache/qrcode.png` 的那张图，盯 mtime 自动换图；旁边显示登录阶段（等待扫码 / 已扫码待确认 / 已登录 / 掉线重连）；可一键「刷新二维码」「重新登录」 |
+| **登录二维码** | 直接显示 NapCat 写在 `routes/napcat/Shell/cache/qrcode.png` 的那张图，盯 mtime 自动换图；旁边显示登录阶段（等待扫码 / 已扫码待确认 / 已登录 / 掉线重连）；可一键「刷新二维码」「重新登录」 |
 | **跳转两个 WebUI** | 卡片标题就是链接。NapCat 的链接形如 `http://127.0.0.1:6099/webui/?token=<webui.json 里的 token>` —— 点开**免填 token 直接登录**；另有「复制 token」备用 |
 | **启动卡住的逃生口** | 「控制台启动」：开一个真实控制台窗口跑 `tools/start-napcat-*.bat`，用**脚本自己的提权**（= 你双击脚本那条路）——面板不是管理员时的推荐路线；「复位」：把挂着的提权进程收掉、清掉「启动中」。提权本身有 60 秒超时（`PANEL_ELEVATE_TIMEOUT_MS` 可调），超时会明确报错而不是永远转圈 |
 
@@ -91,16 +91,16 @@ node tools\panel\server.cjs
 ## 几个已经踩过的点（改这个面板前先看）
 
 1. **不要给 Koishi 子进程设 `FORCE_COLOR`。** `run-prod.cjs` 会把子进程输出同时写进
-   `koishi-app/tools/logs/prod-<日期>.log`；带上 ANSI 转义会污染日志文件，
+   `routes/koishi/app/tools/logs/prod-<日期>.log`；带上 ANSI 转义会污染日志文件，
    破坏 `docs/17-常用命令速查.md` 里那套 `Select-String prod-<日期>.log` 的排障流程。
    日志级别是从 `[I]/[W]/[E]` 这个纯文本标记认的，不需要颜色。
 2. **停 NapCat 不是"只会全杀 QQ.exe"。** NapCat 注入在 QQ.exe 里，没有独立进程；
    但面板记着"NapCat 是什么时候被本面板拉起来的"（落盘在 `.runtime/panel/state.json`），
    于是停的时候**只收启动时间在那之后的 QQ.exe**，你原本开着的主号 QQ 不会被牵连。
    只有"面板不知道是谁起的"（比如你先手动开的 NapCat，再打开面板）才退回
-   `taskkill /F /IM QQ.exe`（= 仓库里的 `NapCat.Shell/KillQQ.bat`），而且必须由前端
+   `taskkill /F /IM QQ.exe`（= 仓库里的 `routes/napcat/Shell/KillQQ.bat`），而且必须由前端
    显式带 `force: true`，二次确认框会把"会连主号一起杀"写清楚。
-3. **NapCat 的日志有两个来源**，面板都列出来：`NapCat.Shell/logs/<日期>.log`
+3. **NapCat 的日志有两个来源**，面板都列出来：`routes/napcat/Shell/logs/<日期>.log`
    （winston，`fileLogLevel=debug`，需要 `NAPCAT_DISABLE_MULTI_PROCESS=1`，官方 bat 已设）
    和面板自己重定向出来的 `.runtime/panel/napcat-console.log`（含提权 cmd 的启停信息）。
    "自动"的判定只看两件可观测事实：**文件 mtime 是否在 5 分钟内 + 子进程是否存在**，
@@ -120,7 +120,7 @@ node tools\panel\server.cjs
    所以那个文件里的话全是英文。改它请保持 ASCII + CRLF（`tools/start-napcat-shell.bat`
    的注释里写着同一条规矩）。
 8. **"某个服务在跑"的判据要挑对端口。** Koishi 只看 5140 —— 不能拿 OneBot 端口（3001）判断，
-   那是 **NapCat** 的 WS 服务端端口，只起 NapCat 时它也在听，而且 `koishi-test` 的伪 OneBot
+   那是 **NapCat** 的 WS 服务端端口，只起 NapCat 时它也在听，而且 `routes/koishi/test` 的伪 OneBot
    同样听 3001。NapCat 同理以 WebUI 端口（6099）为主，OneBot 端口只在 `disableWebUI` 时兜底、
    还要配上"有 QQ.exe 进程"。
 9. **★ 非管理员面板里那条 `Start-Process -Verb RunAs` 在本机弹不出 UAC 提示。**
@@ -153,9 +153,9 @@ node tools\panel\server.cjs
    `[x] tools\panel\server.cjs not found`（面板是纯 CJS，只有这一处拼接，所以一秒就死）。
    改这个文件后**一定要真的双击跑一遍**，别只看语法。
 12. **Shell 与 Framework 都是"启动并注入你已装的那个 QQ"**，不是"一个注入已装 QQ、一个自带框架"。
-    取证：`NapCat.Framework\napiLoader.bat` 同样从注册表读 QQ 路径；`napimain.exe` 里的字符串是
+    取证：`routes/napcat/Framework\napiLoader.bat` 同样从注册表读 QQ 路径；`napimain.exe` 里的字符串是
     `launcher.exe <QQ> [DLL]`。所以**换变体解决不了"主号 QQ 占着 QQNT 单实例"**，
-    也都要管理员。两个变体的 `config`/`logs` 是指向 `NapCat.Shell` 的 junction，登录态共用。
+    也都要管理员。两个变体的 `config`/`logs` 是指向 `routes/napcat/Shell` 的 junction，登录态共用。
     绕开单实例只有两条路：先退出主号 QQ，或另装一份 QQ 专供 NapCat（当前 bat 写死注册表路径，
     面板还没做"指定 QQ 路径"这件事）。
 13. **手动启动的口子**：仓库根 `启动NapCat.cmd`（会让你选 Shell/Framework，然后在你自己的控制台里

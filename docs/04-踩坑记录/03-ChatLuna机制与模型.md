@@ -160,7 +160,7 @@ ChatLuna 默认 `allowAtReply: true`：群里只有被 @ / 被叫名字才回。
 [W] chatluna-episode 滚动总结失败：model.invoke is not a function
 ```
 
-**正确写法**（照抄 [vision 插件](../../koishi-app/external/koishi-plugin-chatluna-vision/lib/index.js) 的 `describeWith`）：
+**正确写法**（照抄 [vision 插件](../../routes/koishi/app/external/koishi-plugin-chatluna-vision/lib/index.js) 的 `describeWith`）：
 
 ```js
 const ref = await ctx.chatluna.createChatModel(modelName)

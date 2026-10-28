@@ -9,7 +9,7 @@
 const fs = require('node:fs')
 const path = require('node:path')
 
-const FILE = path.resolve(__dirname, '../koishi-app/koishi.yml')
+const FILE = path.resolve(__dirname, '../routes/koishi/app/koishi.yml')
 let yml = fs.readFileSync(FILE, 'utf8')
 
 const BLOCK = `  qqbot-auth:auth01:

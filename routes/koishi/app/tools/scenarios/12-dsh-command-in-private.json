@@ -1,0 +1,25 @@
+{
+  "_说明": "验私聊里的**指令**会不会被 dsh-connector 当成自然语言吞掉。项目 prefix 是 / 和 .（prefixMode: strict），所以指令要写成 /dsh.ping。",
+  "_判据": [
+    "第1步 /dsh.ping：日志出现 dsh-connector 的 [cmd] 或至少不是 [prompt]（即没把斜杠原文当提示词提交），回复是连接状态卡",
+    "第2步 /help：回复帮助列表，不是模型胡答",
+    "第3步 裸写 dsh.ping（不带前缀）：属于普通文本，被直通给 DSH 是**可接受**的（这轮只做对照，不用判失败）"
+  ],
+  "_前置": "DSH qqbot 8090 在跑；chatIdleMinutes=0；已打 patch-dsh-connector",
+  "selfId": "2178517838",
+  "nickname": "大肥鱼",
+  "steps": [
+    {
+      "wait": 8000,
+      "user": "2791932480",
+      "name": "测试员",
+      "elements": [["text", "/dsh.ping"]]
+    },
+    {
+      "wait": 15000,
+      "user": "2791932480",
+      "name": "测试员",
+      "elements": [["text", "/help"]]
+    }
+  ]
+}

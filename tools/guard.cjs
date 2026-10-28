@@ -16,7 +16,7 @@
  *   node tools/guard.cjs reset 454444539              # 删掉设置，回到默认策略
  *   node tools/guard.cjs check 454444539              # 只看这个群现在回不回
  *
- * 可选：--app koishi-app|koishi-test（默认 koishi-app）
+ * 可选：--app routes/koishi/app|routes/koishi/test（默认 routes/koishi/app）
  *       --file <guard-control.json 路径>
  *       --port <端口> --token <令牌>   # 直接指定，不走控制文件
  */
@@ -35,7 +35,7 @@ function flag(name, def) {
   return v ?? true
 }
 
-const appName = flag('app', 'koishi-app')
+const appName = flag('app', 'routes/koishi/app')
 const fileArg = flag('file', '')
 const portArg = flag('port', '')
 const tokenArg = flag('token', '')

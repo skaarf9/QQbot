@@ -44,6 +44,6 @@ call "%ROOT%tools\start-napcat-framework.bat" %*
 
 :done
 echo.
-echo [i] launcher returned. Logs: NapCat.Shell\logs\ (and the panel NapCat tab).
+echo [i] launcher returned. Logs: routes/napcat/Shell\logs\ (and the panel NapCat tab).
 pause
 endlocal

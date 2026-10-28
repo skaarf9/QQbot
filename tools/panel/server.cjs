@@ -4,7 +4,7 @@
  * server.cjs —— QQbot 一键启动面板（本地服务端，零依赖）
  *
  * 做什么：一个跑在 127.0.0.1 的小 HTTP 服务，配一个网页控制台，用来
- *   ① 一键启动 / 停止 / 重启 **Koishi**（走 koishi-app/tools/run-prod.cjs，日志按天落盘）
+ *   ① 一键启动 / 停止 / 重启 **Koishi**（走 routes/koishi/app/tools/run-prod.cjs，日志按天落盘）
  *   ② 一键启动 / 停止 **NapCat**（走 tools/start-napcat-shell.bat，需要 UAC 提权）
  *   ③ 看两边的日志（带级别着色 / 过滤 / 搜索 / 导出）
  *   ④ 显示 NapCat 的**登录二维码**（抄 NapCat 自己写到 cache/qrcode.png 的那张图），
@@ -18,11 +18,11 @@
  *
  * ★ 键的取证（都不是猜的，写在这里省得以后重新翻）：
  *   · Koishi 日志格式：`YYYY-MM-DD HH:MM:SS [I] scope message`（实测抓包，见开发期 .scratch/koishi-raw.bin）；
- *     由 `run-prod.cjs` 同时写 stdout 与 `koishi-app/tools/logs/prod-<本地日期>.log`。
+ *     由 `run-prod.cjs` 同时写 stdout 与 `routes/koishi/app/tools/logs/prod-<本地日期>.log`。
  *     **不要给子进程设 FORCE_COLOR** —— 那会把 ANSI 转义写进日志文件，破坏 docs/17 里那套
  *     `Select-String prod-<日期>.log` 的排障流程（实测：正常运行的日志文件是纯文本）。
  *   · NapCat 日志格式（napcat.mjs 内 winston 配置）：`MM-DD HH:mm:ss [level] 昵称 | message`；
- *     文件落在 `NapCat.Shell\logs\<日期>.log`（需要 `NAPCAT_DISABLE_MULTI_PROCESS=1`，start-napcat-shell.bat 已设）。
+ *     文件落在 `routes/napcat/Shell\logs\<日期>.log`（需要 `NAPCAT_DISABLE_MULTI_PROCESS=1`，start-napcat-shell.bat 已设）。
  *   · NapCat 二维码：napcat.mjs 在收到二维码时 `writeFile(<cachePath>/qrcode.png)` 覆盖写，
  *     所以**盯这个文件的 mtime 就是"二维码有没有刷新"**（路径 napcat.mjs:82511 附近）。
  *   · NapCat WebUI 免密：web_login 分包读 `location.search.token` 后自动 loginWithToken；
@@ -48,7 +48,7 @@ const { spawn, execFile, execFileSync } = require('node:child_process')
 // ============================================================================
 
 const ROOT = path.resolve(__dirname, '..', '..')
-const KOISHI_APP = path.join(ROOT, 'koishi-app')
+const KOISHI_APP = path.join(ROOT, 'routes/koishi/app')
 const KOISHI_LOG_DIR = path.join(KOISHI_APP, 'tools', 'logs')
 const KOISHI_RUNNER = path.join(KOISHI_APP, 'tools', 'run-prod.cjs')
 const PUBLIC_DIR = path.join(__dirname, 'public')
@@ -59,9 +59,9 @@ const NAPCAT_LAUNCHER_CMD = path.join(RUNTIME, 'napcat-launch.cmd')
 /** NapCat 目录的候选位置：环境变量优先，然后是仓库内的那个（本项目实际用的） */
 const NAPCAT_HOMES = [
   process.env.NAPCAT_HOME,
-  path.join(ROOT, 'NapCat.Shell'),
-  'H:/NapCat.Shell',
-  'D:/NapCat.Shell',
+  path.join(ROOT, 'routes/napcat/Shell'),
+  'H:/routes/napcat/Shell',
+  'D:/routes/napcat/Shell',
 ].filter(Boolean)
 
 const argv = process.argv.slice(2)
@@ -264,7 +264,7 @@ const KOISHI_NODE_SCRIPTS = [
 const RUNNER_SCRIPT = /node(\.exe)?"?\s+"?[^"]*run-prod\.cjs/i
 
 /**
- * ★ 抄自 koishi-app/tools/run-prod.cjs 的坑 84 结论：
+ * ★ 抄自 routes/koishi/app/tools/run-prod.cjs 的坑 84 结论：
  *   "谁持有 5140"不等于"谁是树根" —— 只杀 holder，看护它的 `bin.js start` 会再 fork 一个。
  *   所以要顺着父子关系往上走一层，把看护进程一起收；但只敢认 node.exe + 命令行真的是我们那几个脚本。
  */
@@ -815,7 +815,7 @@ function napcatWebuiUrl(token) {
  * NapCat 是否在跑。
  * ★ 主判据是 **WebUI 端口（默认 6099）在监听**：这是 NapCat 自己的 HTTP 服务，起不来就没有它。
  *   OneBot 端口（3001）只能当**兜底**，而且必须配上"有 QQ.exe" —— 因为测试台的伪 OneBot
- *   也监听 3001（`koishi-test` 那套），单独看它会把测试台误判成 NapCat。
+ *   也监听 3001（`routes/koishi/test` 那套），单独看它会把测试台误判成 NapCat。
  */
 function napcatRunning() {
   const cfg = napcatConfigCache
@@ -830,9 +830,9 @@ function napcatRunning() {
  * NapCat 的两个变体。★ 取证（2026-10-08，别凭印象）：
  *
  *   两个变体**都要管理员、都会去启动并注入你已装的那个 QQ** —— 区别只在注入方式：
- *   shell     `NapCat.Shell`：`NapCatWinBootMain.exe <QQ.exe> <NapCatWinBootHook.dll>` + JS 加载
- *                            （`loadNapCat.js` → `napcat.mjs`），配置在 `NapCat.Shell\config`。
- *   framework `NapCat.Framework`：`napimain.exe <QQ.exe> <napiloader.dll> <nativeLoader.cjs>`
+ *   shell     `routes/napcat/Shell`：`NapCatWinBootMain.exe <QQ.exe> <NapCatWinBootHook.dll>` + JS 加载
+ *                            （`loadNapCat.js` → `napcat.mjs`），配置在 `routes/napcat/Shell\config`。
+ *   framework `routes/napcat/Framework`：`napimain.exe <QQ.exe> <napiloader.dll> <nativeLoader.cjs>`
  *                            原生加载。`napiLoader.bat` 同样从注册表读 QQ 路径，
  *                            `napimain.exe` 里的字符串是 `launcher.exe <QQ> [DLL]`。
  *
@@ -842,7 +842,7 @@ function napcatRunning() {
  *     真正的解法只有两条：① 先退出主号 QQ；② 另装一份 QQ 专供 NapCat（这两个 bat 都写死了
  *     注册表路径，要走这条路得让启动器接受一个显式的 QQ 路径 —— 面板目前没做）。
  *
- *   （`NapCat.Framework\config` 与 `\logs` 都是指向 `NapCat.Shell` 的 junction，
+ *   （`routes/napcat/Framework\config` 与 `\logs` 都是指向 `routes/napcat/Shell` 的 junction，
  *     所以两个变体共用同一份登录态与 OneBot 配置，切换不需要重新扫码。）
  */
 const NAPCAT_VARIANTS = {
@@ -850,14 +850,14 @@ const NAPCAT_VARIANTS = {
     key: 'shell',
     label: 'Shell（NapCatWinBootMain 注入）',
     bat: path.join(ROOT, 'tools', 'start-napcat-shell.bat'),
-    needs: ['NapCat.Shell/napcat.mjs', 'NapCat.Shell/NapCatWinBootMain.exe', 'NapCat.Shell/NapCatWinBootHook.dll'],
+    needs: ['routes/napcat/Shell/napcat.mjs', 'routes/napcat/Shell/NapCatWinBootMain.exe', 'routes/napcat/Shell/NapCatWinBootHook.dll'],
     touchInstalledQq: true,
   },
   framework: {
     key: 'framework',
     label: 'Framework（napimain + napiloader 注入）',
     bat: path.join(ROOT, 'tools', 'start-napcat-framework.bat'),
-    needs: ['NapCat.Framework/napimain.exe', 'NapCat.Framework/napiloader.dll', 'NapCat.Framework/nativeLoader.cjs'],
+    needs: ['routes/napcat/Framework/napimain.exe', 'routes/napcat/Framework/napiloader.dll', 'routes/napcat/Framework/nativeLoader.cjs'],
     touchInstalledQq: true,
   },
 }

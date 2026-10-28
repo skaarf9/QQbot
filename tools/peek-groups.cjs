@@ -1,6 +1,6 @@
 // 看一下生产库里出现过哪些群（用来决定 R9 监控范围）
 const { DatabaseSync } = require('node:sqlite')
-const db = new DatabaseSync('D:/deepseek/QQbot/koishi-app/data/koishi.db', { readOnly: true })
+const db = new DatabaseSync('D:/deepseek/QQbot/routes/koishi/app/data/koishi.db', { readOnly: true })
 const q = (sql) => {
   try {
     return db.prepare(sql).all()

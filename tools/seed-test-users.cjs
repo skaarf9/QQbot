@@ -13,7 +13,7 @@ const { DatabaseSync } = require('node:sqlite')
 
 const RESET = process.argv.includes('--reset')
 const DUMP_ONLY = process.argv.includes('--dump')
-const DB = path.resolve(__dirname, '../koishi-test/data/test.db')
+const DB = path.resolve(__dirname, '../routes/koishi/test/data/test.db')
 const db = new DatabaseSync(DB)
 
 const PLATFORM = 'onebot'

@@ -20,7 +20,7 @@ const opt = (name, def) => {
   const i = args.indexOf(`--${name}`)
   return i >= 0 ? args[i + 1] : def
 }
-const DB = opt('db', path.join(__dirname, '..', 'koishi-test', 'data', 'test.db'))
+const DB = opt('db', path.join(__dirname, '..', 'routes/koishi/test', 'data', 'test.db'))
 
 // 只清这些：会话绑定 / 会话 / 消息 / 归档快照
 const TABLES = [

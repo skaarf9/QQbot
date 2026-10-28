@@ -9,7 +9,7 @@
  * 用法：
  *   node --experimental-sqlite --no-warnings tools/peek-docstore.cjs
  *   node --experimental-sqlite --no-warnings tools/peek-docstore.cjs --grep 烤鱼
- *   node --experimental-sqlite --no-warnings tools/peek-docstore.cjs --db koishi-test/data/test.db
+ *   node --experimental-sqlite --no-warnings tools/peek-docstore.cjs --db routes/koishi/test/data/test.db
  *   node --experimental-sqlite --no-warnings tools/peek-docstore.cjs --full     # 不截断正文
  */
 const { DatabaseSync } = require('node:sqlite')
@@ -23,7 +23,7 @@ const opt = (name, def) => {
 }
 const has = (name) => args.includes(`--${name}`)
 
-const DB = opt('db', path.join(__dirname, '..', 'koishi-app', 'data', 'koishi.db'))
+const DB = opt('db', path.join(__dirname, '..', 'routes/koishi/app', 'data', 'koishi.db'))
 const GREP = opt('grep', '')
 const FULL = has('full')
 const LIMIT = Number(opt('limit', 50)) || 50
@@ -72,7 +72,7 @@ if (!tableExists('chatluna_docstore')) {
 }
 
 // ---- 2) luna-vdb 目录
-for (const label of ['koishi-app', 'koishi-test']) {
+for (const label of ['routes/koishi/app', 'routes/koishi/test']) {
   const dir = path.join(__dirname, '..', label, 'data', 'chathub', 'vector_store', 'luna_vdb')
   if (!fs.existsSync(dir)) {
     console.log(`\n== luna_vdb 目录（${label}）：不存在 ==`)

@@ -3,8 +3,8 @@ const fs = require('node:fs')
 const path = require('node:path')
 const { execFileSync } = require('node:child_process')
 
-const APP = 'D:/deepseek/QQbot/koishi-app'
-const TEST = 'D:/deepseek/QQbot/koishi-test'
+const APP = 'D:/deepseek/QQbot/routes/koishi/app'
+const TEST = 'D:/deepseek/QQbot/routes/koishi/test'
 
 fs.mkdirSync(TEST, { recursive: true })
 fs.mkdirSync(path.join(TEST, 'data/chathub/presets'), { recursive: true })

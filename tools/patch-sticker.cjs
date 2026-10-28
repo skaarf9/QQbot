@@ -22,20 +22,23 @@
  *   [4] tools.js / commands.js：发图时不再写死 `data:image/png`，改用 mimeOf。
  *       —— 原代码把 GIF / JPEG 的表情也声明成 image/png（文件是按原字节存的），
  *          这是真的会发出去显示不出来（QQ 侧按 MIME 解就废了）。
+ *   [5] library.js：judgeByModel 不再把图片字节送进模型（SC-VISION）。
+ *       原来 cc/q.sticker 自己看图，和 chatluna-vision 对同一张图各看一遍；
+ *       现在只拿 vision 的描述做纯文字判定，看图的地方只剩 vision 一个。
  *
  * 用法
  *   node tools/patch-sticker.cjs            # 打补丁（幂等）
  *   node tools/patch-sticker.cjs --revert   # 从 .orig 还原
  *   node tools/patch-sticker.cjs --check    # 只看状态，不改文件
  *
- * 装完/升级依赖后要重跑（koishi-app/package.json 里挂了 postinstall 自动跑）。
+ * 装完/升级依赖后要重跑（routes/koishi/app/package.json 里挂了 postinstall 自动跑）。
  */
 
 const fs = require('fs')
 const path = require('path')
 
 const ROOT = path.resolve(__dirname, '..')
-const LIB = path.join(ROOT, 'koishi-app', 'node_modules', 'koishi-plugin-chatluna-sticker', 'lib')
+const LIB = path.join(ROOT, 'routes/koishi/app', 'node_modules', 'koishi-plugin-chatluna-sticker', 'lib')
 
 const GUARD_START = '            // >>>SC-GUARD-START<<<'
 const GUARD_END = '            // >>>SC-GUARD-END<<<'
@@ -71,7 +74,8 @@ function hasMarkers(s) {
   return (
     s.includes('>>>SC-GUARD-START<<<') ||
     s.includes('>>>SC-POOL<<<') ||
-    s.includes('>>>SC-MIME<<<')
+    s.includes('>>>SC-MIME<<<') ||
+    s.includes('>>>SC-VISION<<<')
   )
 }
 
@@ -258,6 +262,165 @@ function patchMimeUsage(file) {
   console.log(`  ✓ ${file} 发图改用 mimeOf()`)
 }
 
+// ------------------------------------------------------------------ [5] 只让 vision 看图
+//
+// 2026-10-27：同一张群图被两个视觉模型各看一遍。
+//   chatluna-vision 把图片描述成文字（chatluna_image_cache），
+//   而本插件 judgeByModel 又把**图片字节**塞给 cc/q.sticker 再判一次 —— 描述两套、
+//   token 两份，两边都不知道对方看过。现在判定只拿 vision 的描述做**纯文字**判断。
+//
+// 拿不到描述时不硬判：状态退回 new，等这张图下次出现时再试（vision 那时可能已经描述过）。
+// 没有 chatluna_vision 服务（vision 插件没装）时只打一条 error，不再单独调视觉模型。
+function patchVisionOnlyJudge() {
+  const f = path.join(LIB, 'library.js')
+  let s = read(f)
+  if (s == null) return
+
+  if (REVERT) {
+    const bak = f + '.orig'
+    if (!fs.existsSync(bak)) return console.log('  · library.js 没有备份，跳过还原')
+    fs.copyFileSync(bak, f)
+    changed++
+    return console.log('  · library.js 已还原（含 SC-VISION / SC-MIME）')
+  }
+  if (CHECK) {
+    console.log(`  · library.js    : ${s.includes('>>>SC-VISION<<<') ? '已打 SC-VISION' : '未打 SC-VISION'}`)
+    return
+  }
+  if (s.includes('>>>SC-VISION<<<')) return console.log('  · library.js 已打过 SC-VISION，跳过')
+
+  const anchorClass = '    // ── 模型判断 ──────────────────────────────────────────'
+  const anchorCall = [
+    '                const model = this.judgeModelRef.value;',
+    '                const result = await model.invoke([',
+  ].join('\n')
+  const anchorImg = [
+    '                            {',
+    "                                type: 'image_url',",
+    '                                image_url: {',
+    '                                    url: `data:image/png;base64,${buf.toString(\'base64\')}`,',
+    '                                },',
+    '                            },',
+    "                            { type: 'text', text: '这张图是否值得收藏为表情包？' },",
+  ].join('\n')
+  const anchorSystem = "                        content: '你是表情包收藏助手。判断这张在群聊中反复出现的图片是否适合收藏为表情包。\\n' +"
+  const anchorDesc = "                            description: String(parsed.description || ''),"
+  const anchorLog = "parsed.description || '(无描述)'"
+
+  for (const [name, a] of [
+    ['class', anchorClass],
+    ['call', anchorCall],
+    ['image', anchorImg],
+    ['system', anchorSystem],
+    ['desc', anchorDesc],
+  ]) {
+    if (!s.includes(a)) {
+      console.error(`✗ library.js 找不到锚点 ${name}（插件版本变了？），请人工核对`)
+      problems++
+      return
+    }
+  }
+
+  const method = [
+    '    // >>>SC-VISION<<< 图片只给 vision 看：判定之前先要到一段**文字描述**。',
+    '    // 原代码把图片字节直接塞给 judgeModel（默认 cc/q.sticker）做视觉判断，而 chatluna-vision',
+    '    // 对同一张图也会调一次视觉模型 —— 同一张群图被两个模型各看一遍，描述两套、token 两份。',
+    '    // 现在：先查 vision 缓存（sha256 → pHash 近似），没有再请 vision 现场描述一次',
+    '    // （走它自己的 inflight + 缓存，所以和聊天链路共用同一份描述）。',
+    '    async resolveDescription(buf) {',
+    "        const crypto = require('node:crypto');",
+    "        const sha = crypto.createHash('sha256').update(buf).digest('hex');",
+    '        try {',
+    "            const rows = await this.ctx.database.get('chatluna_image_cache', { hash: sha });",
+    '            if (rows[0] && rows[0].description && String(rows[0].description).trim()) {',
+    "                return { desc: String(rows[0].description), from: 'vision-cache:sha256' };",
+    '            }',
+    '        } catch (e) { /* vision 插件没装时没有这张表 */ }',
+    '        const phash = await this.computePHash(buf);',
+    '        if (phash) {',
+    '            try {',
+    "                const rows = await this.ctx.database.get('chatluna_image_cache', {});",
+    '                let best = null;',
+    '                let bestD = this.config.phashThreshold + 1;',
+    '                for (const r of rows) {',
+    '                    if (!r.phash || !r.description) continue;',
+    '                    const d = this.hammingDistance(String(r.phash).toLowerCase(), phash);',
+    '                    if (d < bestD) { bestD = d; best = r; }',
+    '                }',
+    "                if (best) return { desc: String(best.description), from: 'vision-cache:pHash' };",
+    '            } catch (e) { }',
+    '        }',
+    "        const svc = (this.ctx.get && this.ctx.get('chatluna_vision')) || (this.ctx.root && this.ctx.root.chatluna_vision);",
+    "        if (svc && typeof svc.describe === 'function') {",
+    '            try {',
+    '                const got = await svc.describe(buf);',
+    "                if (got && String(got.description || '').trim()) {",
+    "                    return { desc: String(got.description), from: 'vision-service' };",
+    '                }',
+    '            } catch (e) {',
+    "                this.ctx.logger.warn('[sticker] 请 vision 描述失败（' + (phash || sha.slice(0, 8)) + '）：' + (e && e.message ? e.message : e));",
+    '            }',
+    '            return null;',
+    '        }',
+    '        if (!this.visionMissingWarned) {',
+    '            this.visionMissingWarned = true;',
+    "            this.ctx.logger.error('[sticker] 找不到 chatluna_vision 服务（vision 插件没装/没加载）。为避免重复调用视觉模型，自动收藏的模型判定已停用；装好 koishi-plugin-chatluna-vision 后重启即可恢复。');",
+    '        }',
+    '        return null;',
+    '    }',
+    '',
+  ].join('\n')
+
+  s = s.replace(anchorClass, method + anchorClass)
+
+  const callInjection = [
+    '                const model = this.judgeModelRef.value;',
+    '                // >>>SC-VISION<<< 先拿描述；拿不到就不判（不烧视觉调用，下次图再出现时重试）',
+    '                const scResolved = await this.resolveDescription(buf);',
+    '                if (!scResolved) {',
+    '                    await this.releaseJudge(pHash, token, {',
+    "                        status: 'new',",
+    "                        judgeError: 'vision 还没有这张图的描述（等下次出现时再判）',",
+    '                    });',
+    "                    this.ctx.logger.warn('[sticker] ' + pHash + ' 没有可用的视觉描述，跳过本轮判定（未调用任何视觉模型）');",
+    '                    return;',
+    '                }',
+    '                const result = await model.invoke([',
+  ].join('\n')
+
+  s = s.replace(anchorCall, callInjection)
+
+  const imgReplacement = [
+    '                            {',
+    "                                type: 'text',",
+    "                                text: '这张图的内容是：「' + scResolved.desc + '」\\n（你看不到图片本身，只能读到这段描述）这张图是否值得收藏为表情包？',",
+    '                            },',
+  ].join('\n')
+
+  s = s.replace(anchorImg, imgReplacement)
+
+  s = s.replace(
+    anchorSystem,
+    [
+      anchorSystem,
+      "                            '★ 你看不到图片本身，只能看到另一套视觉管线写下的文字描述；据此判断。\\n' +",
+    ].join('\n')
+  )
+
+  s = s.replace(
+    anchorDesc,
+    [
+      '                            // >>>SC-VISION<<< 描述统一用 vision 那份（表情库和聊天缓存说同一句话，[自己] 标记也不丢）',
+      "                            description: String(scResolved.desc || parsed.description || ''),",
+    ].join('\n')
+  )
+
+  s = s.replace(anchorLog, "scResolved.desc || '(无描述)'")
+
+  writeWithBackup(f, s)
+  console.log('  ✓ library.js 判定改为「只读 vision 描述、不看图」')
+}
+
 console.log(`chatluna-sticker 补丁${REVERT ? '（还原模式）' : CHECK ? '（检查模式）' : ''}`)
 if (!fs.existsSync(LIB)) {
   console.error(`✗ 目录不存在：${LIB}\n  先 npm i 装好 koishi-plugin-chatluna-sticker 再跑这个脚本。`)
@@ -268,6 +431,7 @@ patchTools()
 patchLibrary()
 patchMimeUsage('tools.js')
 patchMimeUsage('commands.js')
+patchVisionOnlyJudge()
 console.log(
   CHECK ? '检查完成' : REVERT ? `还原完成（改动 ${changed} 个文件）` : `完成：改了 ${changed} 个文件${problems ? `，${problems} 处需要人工核对` : ''}`
 )

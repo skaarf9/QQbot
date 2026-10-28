@@ -9,7 +9,7 @@
  *   node --experimental-sqlite --no-warnings tools/peek-memory.cjs                    # 会话历史 + 记忆表
  *   node --experimental-sqlite --no-warnings tools/peek-memory.cjs --grep 饿           # 解压后在历史里搜关键词
  *   node --experimental-sqlite --no-warnings tools/peek-memory.cjs --hours 6           # 只看最近 6 小时的历史
- *   node --experimental-sqlite --no-warnings tools/peek-memory.cjs --db koishi-test/data/test.db
+ *   node --experimental-sqlite --no-warnings tools/peek-memory.cjs --db routes/koishi/test/data/test.db
  */
 const { DatabaseSync } = require('node:sqlite')
 const zlib = require('node:zlib')
@@ -20,7 +20,7 @@ const opt = (name, def) => {
   const i = args.indexOf(`--${name}`)
   return i >= 0 ? args[i + 1] : def
 }
-const DB = opt('db', path.join(__dirname, '..', 'koishi-app', 'data', 'koishi.db'))
+const DB = opt('db', path.join(__dirname, '..', 'routes/koishi/app', 'data', 'koishi.db'))
 const GREP = opt('grep', '')
 const HOURS = Number(opt('hours', 0)) || 0
 const LIMIT = Number(opt('limit', 14)) || 14

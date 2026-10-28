@@ -1,0 +1,20 @@
+{
+  "name": "koishi-plugin-chatluna-dsh-tool",
+  "version": "0.1.0",
+  "description": "把 DeepSeek Harness 当成 ChatLuna 的一个工具：模型自己发起任务、自己拿结果，默认复用旧会话以省 token",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "private": true,
+  "keywords": [
+    "chatbot",
+    "koishi",
+    "plugin",
+    "chatluna",
+    "dsh",
+    "harness",
+    "tool"
+  ],
+  "peerDependencies": {
+    "koishi": "^4.18.0"
+  }
+}
